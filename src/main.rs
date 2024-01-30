@@ -11,6 +11,7 @@ pub use std::{fs, io::Result, sync::Mutex, collections::HashMap};
 
 mod file;
 mod controllers;
+mod game;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
