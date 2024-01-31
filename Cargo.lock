@@ -796,6 +796,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "set",
 ]
 
 [[package]]
@@ -1260,6 +1261,14 @@ dependencies = [
  "form_urlencoded",
  "itoa",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "set"
+version = "0.1.0"
+source = "git+https://github.com/DmitriyYankovskiy/set.git#c7106170163b2befca17104e845b992e0daa3e68"
+dependencies = [
  "serde",
 ]
 
