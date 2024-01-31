@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
-use characters::{Role, Character};
+use crate::characters::{Role, Character};
 
 pub enum GameState {
     Setup(Setup),
@@ -52,8 +52,8 @@ impl GameState {
         }
     }
 
-    pub fn add_player(&mut self, player: Player) -> Result<usize, &str>{
-        if let GameState::Setup(setup) = self {     
+    pub fn add_player(&mut self, player: Player) -> Result<usize, &str> {
+        if let GameState::Setup(setup) = self {
             Ok(setup.add_player(player))
         } else {
             Err("you are trying to start the game but it has already started")

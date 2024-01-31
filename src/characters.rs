@@ -12,4 +12,3 @@ pub enum Role {
     Sheriff,
     Maniac,
 }
-
