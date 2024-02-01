@@ -11,7 +11,7 @@ pub use std::{fs, io::Result, sync::Mutex, collections::HashMap};
 
 mod file;
 mod controllers;
-mod game
+mod game;
 mod characters;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -20,9 +20,6 @@ pub struct PlayerInfo<T> {
     name: String,
     info: T,
 }
-
-
-
 
 fn hbs_init(hbs: &mut Handlebars) {
     hbs.register_helper("partial", Box::new(
@@ -46,6 +43,7 @@ async fn main() -> Result<()> {
         App::new()
         .app_data(hbs_data.clone())
         .service(controllers::index)
+        .service(controllers::files_controller)
     )    
     .bind(("127.0.0.1", 9999))?
     .run()

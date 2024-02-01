@@ -22,6 +22,15 @@ impl FileType {
         }
         FileType::Undefined
     }
+
+    fn to_string(&self) -> String {
+        match self {
+            FileType::Html => "text/html".to_string(),
+            FileType::Css => "text/css".to_string(),
+            FileType::Js => "text/js".to_string(),
+            FileType::Undefined => "text/undefined".to_string()
+        }
+    }
 }
 
 
@@ -34,15 +43,14 @@ pub fn file_to_string(path: String) -> String {
 
 pub fn file_response(path: String) -> HttpResponse {
     match fs::read_to_string(format!("{}", path)) {
-        
-        Ok(file) => HttpResponse::Ok().content_type("").body(file),
+        Ok(file) => HttpResponse::Ok().content_type().body(file),
         Err(..) => HttpResponse::Forbidden().body("404"),
     }
 }
 
-pub fn file_in_layout_response(layout_path: String, options: JsonValue, hbs_data: web::Data<Handlebars<'_>>) -> HttpResponse {
+fn file_in_layout_response(layout_path: String, options: JsonValue, hbs_data: web::Data<Handlebars<'_>>) -> HttpResponse {
     match fs::read_to_string(format!("www/layouts/{}.html", layout_path)) {
-        Ok(file) => HttpResponse::Ok().content_type("text/html")
+        Ok(file) => HttpResponse::Ok().content_type(FileType::Html.to_string())
         .body(match hbs_data.render_template(&file, &options) {
             Ok(file) => file,
             Err(..) => return HttpResponse::Forbidden().body("500"),
