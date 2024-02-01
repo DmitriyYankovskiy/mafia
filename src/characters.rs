@@ -1,7 +1,21 @@
+use crate::game::Player;
+
+pub type Num = usize;
+
 pub struct Character {
+    num: Num,
     player: Player,
     role: Role,
-    num: usize,
+}
+
+impl Character {
+    pub fn new(num: Num, player: Player, role: Role) -> Self {
+        Character {
+            player,
+            role,
+            num,
+        }
+    }
 }
 
 

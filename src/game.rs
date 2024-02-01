@@ -35,11 +35,11 @@ impl GameState {
             let mut characters = Vec::<Character>::new();
             
             for i in 0..(players.len()) {
-                characters.push(Character {
-                    num: i,
-                    player: players[i].clone(),
-                    role: roles[i],
-                });
+                characters.push(Character::new(
+                    i,
+                    players[i].clone(),
+                    roles[i],
+                ));
             }
 
             self = GameState::On(Game {
@@ -92,14 +92,12 @@ pub struct Game {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Player {
     name: String,
-    num: usize,
 }
 
 impl Player {
     fn new(name: String, num: usize) -> Self {
         Player {
             name,
-            num,
         }
     }
 }

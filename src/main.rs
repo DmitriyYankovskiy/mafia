@@ -12,6 +12,7 @@ pub use std::{fs, io::Result, sync::Mutex, collections::HashMap};
 mod file;
 mod controllers;
 mod game;
+mod game_loop;
 mod characters;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
