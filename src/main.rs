@@ -22,9 +22,6 @@ pub struct PlayerInfo<T> {
     info: T,
 }
 
-
-
-
 fn hbs_init(hbs: &mut Handlebars) {
     hbs.register_helper("partial", Box::new(
         |h: &handlebars::Helper, hbs: &Handlebars, ctx: &handlebars::Context, rc: &mut handlebars::RenderContext, out: &mut dyn handlebars::Output| -> HelperResult {
@@ -47,6 +44,7 @@ async fn main() -> Result<()> {
         App::new()
         .app_data(hbs_data.clone())
         .service(controllers::index)
+        .service(controllers::files_controller)
     )    
     .bind(("127.0.0.1", 9999))?
     .run()

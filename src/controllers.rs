@@ -5,7 +5,12 @@ use crate::file;
 
 #[get("/")]
 pub async fn index(hbs_data: web::Data<Handlebars<'_>>) -> impl Responder {
-    file::file_in_layout_response("main".to_string(), json!({"title": "Game", "page": "game/index.html"}), hbs_data)
+    file::file_in_layout_response("main".to_string(), json!({"title": "Mafia game | gamecode", "page": "game/index.html"}), hbs_data)
+}
+
+#[get("/www/{path:.*}")]
+pub async fn files_controller(path: web::Path<String>, hbs_data: web::Data<Handlebars<'_>>) -> impl Responder {
+    file::file_response(format!("www/{}", path).to_string())
 }
 
 // #[get("/connect")]
