@@ -5,6 +5,39 @@ use crate::characters::Num;
 
 struct GameLoop {
     stage: Stage,
+    round: usize,
+}
+
+impl GameLoop {
+    fn new() -> Self {
+        GameLoop {
+            stage: Stage::new(),
+            round: 0,
+        }
+    }
+
+
+    fn get_round(&self) -> usize {
+        self.round
+    }
+
+    fn next(&mut self) {
+        let stage = &mut self.stage; 
+        match stage {
+            Stage::Night {
+                time,
+                dies,
+            } => {
+                *stage = Stage::Sunrise { idx: 0, dies: dies };
+            },
+            Stage::Sunrise {
+                idx,
+                dies,
+            } => {
+                *stage = Stage::Discussion {num: self.get_round(), accuses: HashSet::<Num>::new()};
+            }
+        }
+    }
 }
 
 pub enum Stage {
@@ -17,21 +50,18 @@ pub enum Stage {
         dies: HashSet<Num>,
     },
     Discussion {
-        HashSet<Num>
+        num: Num,
+        accuses: HashSet<Num>,
     },
     Voting(Discussion),
     Sunset,
 }
 
 impl Stage {
-    fn init(&mut self) {
-        match self {
-            Self::Night {time} => (),
-            Sunrise()
-        }
+    fn new() -> Self {
+        Self::Discussion {num: 0, accuses: HashSet::<Num>::new()}
     }
 }
-
 
 struct Candidate {
     num: Num,
