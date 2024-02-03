@@ -1,4 +1,4 @@
-use actix_web::{get, web::{self, Json}, App, HttpResponse, HttpServer, Responder, HttpRequest};
+use axum::{routing::get, Error, Router};
 use handlebars::{HelperDef, HelperResult, JsonRender, Handlebars, JsonValue};
 
 use reqwest::Response;
@@ -6,8 +6,8 @@ use reqwest::Response;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
 
-use std::ops::Deref;
-pub use std::{fs, io::Result, sync::Mutex, collections::HashMap};
+use std::{net::SocketAddr, ops::Deref, sync::Arc};
+pub use std::{fs, sync::Mutex, collections::HashMap};
 
 mod file;
 mod controllers;
@@ -34,19 +34,27 @@ fn hbs_init(hbs: &mut Handlebars) {
     ));
 }
 
-#[actix_web::main]
-async fn main() -> Result<()> {
+#[derive(Clone)]
+pub struct AppState<'a> {
+    pub hbs: Arc<Handlebars<'a>>,
+}
+
+#[tokio::main]
+async fn main() {
     let mut hbs: Handlebars<'_> = Handlebars::new();
     hbs_init(&mut hbs);
 
-    let hbs_data: web::Data<Handlebars<'_>> = web::Data::new(hbs);
-    HttpServer::new(move || 
-        App::new()
-        .app_data(hbs_data.clone())
-        .service(controllers::index)
-        .service(controllers::files_controller)
-    )    
-    .bind(("127.0.0.1", 9999))?
-    .run()
-    .await
+    let state = AppState {
+        hbs: Arc::new(hbs),
+    };
+
+    let app = Router::new()
+        .route("/", get(controllers::index))
+        .route("/public/*path", get(controllers::static_files))
+        .with_state(state);
+
+    let addr = SocketAddr::from(([127, 0, 0, 1], 9999));
+
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }

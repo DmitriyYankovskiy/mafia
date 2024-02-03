@@ -1,16 +1,16 @@
-use actix_web::{get, web, Responder};
-use handlebars::Handlebars;
-use serde_json::json;
-use crate::file;
+use std::sync::Arc;
 
-#[get("/")]
-pub async fn index(hbs_data: web::Data<Handlebars<'_>>) -> impl Responder {
-    file::file_in_layout_response("main".to_string(), json!({"title": "Mafia game | gamecode", "page": "game/index.html"}), hbs_data)
+use axum::{extract::{Path, State}, response::{IntoResponse, Response}, http::StatusCode};
+use serde_json::json;
+use crate::{file, AppState};
+
+pub async fn index(State(state): State<AppState<'_>>) -> Response {
+    let hbs = state.hbs;
+    file::file_in_layout_response("main".to_string(), json!({"title": "Mafia game | gamecode", "page": "game/index.html"}), hbs)
 }
 
-#[get("/www/{path:.*}")]
-pub async fn files_controller(path: web::Path<String>, hbs_data: web::Data<Handlebars<'_>>) -> impl Responder {
-    file::file_response(format!("www/{}", path).to_string())
+pub async fn static_files(Path(path): Path<String>) -> Response {
+    file::file_response(format!("public/{}", path).to_string())
 }
 
 // #[get("/connect")]
