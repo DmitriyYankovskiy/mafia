@@ -1,10 +1,10 @@
 use axum::{routing::get, Error, Router};
-use handlebars::{HelperDef, HelperResult, JsonRender, Handlebars, JsonValue};
-
+use tera::Tera;
+use tower_http::services::ServeDir;
 use reqwest::Response;
 
 use serde::{Serialize, Deserialize};
-use serde_json::json;
+use serde_json::{json, Value};
 
 use std::{net::SocketAddr, ops::Deref, sync::Arc};
 pub use std::{fs, sync::Mutex, collections::HashMap};
@@ -22,35 +22,48 @@ pub struct PlayerInfo<T> {
     info: T,
 }
 
-fn hbs_init(hbs: &mut Handlebars) {
-    hbs.register_helper("partial", Box::new(
-        |h: &handlebars::Helper, hbs: &Handlebars, ctx: &handlebars::Context, rc: &mut handlebars::RenderContext, out: &mut dyn handlebars::Output| -> HelperResult {
-            let name =
-            h.param(0).ok_or(handlebars::RenderErrorReason::ParamNotFoundForIndex("closure-helper", 0))?;
+// fn hbs_init(hbs: &mut Handlebars) {
+//     hbs.register_helper("partial", Box::new(
+//         |h: &handlebars::Helper, hbs: &Handlebars, ctx: &handlebars::Context, rc: &mut handlebars::RenderContext, out: &mut dyn handlebars::Output| -> HelperResult {
+//             let name =
+//             h.param(0).ok_or(handlebars::RenderErrorReason::ParamNotFoundForIndex("closure-helper", 0))?;
 
-            out.write(file::file_to_string(name.value().render()).as_str())?;
-            Ok(())
-        }
-    ));
+//             out.write(file::file_to_string(name.value().render()).as_str())?;
+//             Ok(())
+//         }
+//     ));
+// }
+
+fn loop_filter(v: Value, hm: HashMap<String, Value>) -> Result<Value, String> {
+    let string = match v.as_str() {
+        Some(s) => s,
+        None => "",
+    }.to_string();
+    let mut ans: String;
+    for i in 0..3 {
+        ans.push_str(&string)
+    }
+    Result::Ok(Value::String(ans))
 }
 
 #[derive(Clone)]
-pub struct AppState<'a> {
-    pub hbs: Arc<Handlebars<'a>>,
+pub struct AppState {
+    pub tera: Arc<Tera>,
 }
 
 #[tokio::main]
 async fn main() {
-    let mut hbs: Handlebars<'_> = Handlebars::new();
-    hbs_init(&mut hbs);
+    let mut tera = Tera::new("public/**/*.*").unwrap();
+    tera.autoescape_on(vec![]);
+    tera.register_filter("loop", loop_filter);
 
     let state = AppState {
-        hbs: Arc::new(hbs),
+        tera: Arc::new(tera),
     };
 
     let app = Router::new()
         .route("/", get(controllers::index))
-        .route("/public/*path", get(controllers::static_files))
+        .nest_service("/public", ServeDir::new("public"))
         .with_state(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 9999));

@@ -15,6 +15,8 @@ serde_json = {version = "1.0.113"}
 serde = {version = "1.0.196", features = ["derive"]}
 
 rand = {version = "0.8.5"}
-handlebars = {version = "*"}
+tera = { version = "1.19.1"}
+
+tower-http = {version = "*", features = ["fs"]}
 
 set = {version = "*", git = "https://github.com/DmitriyYankovskiy/set.git"}
