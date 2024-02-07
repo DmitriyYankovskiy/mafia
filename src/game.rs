@@ -43,7 +43,7 @@ impl GameState {
                 characters.push(Character::new(i, Rc::downgrade(&players_vec[i]), roles[i]));
             }
 
-            self = GameState::On(Game { characters: characters.into_iter().map(RefCell::new).map(Rc::new).collect(), players: Vec::new() });
+            self = GameState::On(Game { characters: characters.into_iter().map(RefCell::new).map(Rc::new).collect(), players});
 
             Ok(())
         } else {

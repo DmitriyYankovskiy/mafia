@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = {version = "*"}
+axum = {version = "*", features = ["headers","ws"]}
 tokio = {version = "*", features = ["full"]}
+tower-http = {version = "*", features = ["fs"]}
 
 reqwest = {version = "0.11.23", features = ["json"]}
 
@@ -17,6 +18,5 @@ serde = {version = "1.0.196", features = ["derive"]}
 rand = {version = "0.8.5"}
 tera = { version = "1.19.1"}
 
-tower-http = {version = "*", features = ["fs"]}
 
 set = {version = "*", git = "https://github.com/DmitriyYankovskiy/set.git"}

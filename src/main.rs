@@ -11,7 +11,10 @@ use std::{net::SocketAddr, ops::Deref, sync::Arc};
 pub use std::{fs, sync::Mutex, collections::HashMap};
 
 mod file;
+
 mod controllers;
+mod websockets;
+
 mod game;
 // mod game_loop;
 mod characters;
@@ -54,7 +57,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(controllers::index))
-        .route("/ws", ws_game)
+        .route("/ws", get(controllers::ws))
         .nest_service("/public", ServeDir::new("public"))
         .with_state(state);
 
