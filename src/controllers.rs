@@ -11,22 +11,11 @@ pub async fn index(State(state): State<AppState>) -> Response {
     context.insert("title", &"Aboba".to_string());
     context.insert("page", &tera.render("game/index.html", &context).unwrap());
     Html::from(tera.render("layouts/main.html", &context).unwrap()).into_response()
-    //file::file_in_layout_response("main".to_string(), json!({"title": "Mafia game | gamecode", "page": "game/index.html"}), hbs)
 }
 
-// pub async fn static_files(Path(path): Path<String>) -> Response {
-//     file::file_response(format!("public/{}", path).to_string())
-// }
-
-// #[get("/connect")]
-// pub async fn connect(hbs_data: web::Data<Handlebars<'_>>, json: web::Json<PlayerInfo<String>>) -> impl Responder {
-//     let mut game = game_data.lock().unwrap();
-//     match game.add_player(json.0) {
-//         Ok(id) => {
-//             file_in_layout_response("main".to_string(), json!({"title": "Game", "page": "game/index.html"}), hbs_data)
-//         },
-//         Err(..) => {
-//             HttpResponse::InternalServerError().body("character not found")
-//         }
-//     }
-// }
+pub async fn ws_game() {
+    let (mut tx, mut rx) = ws.split();
+    while let Some(Ok(msg)) = rx.next().await {
+        tx.send(Message::Text(msg.to_string())).await.unwrap();
+    } 
+}

@@ -1,4 +1,5 @@
 use axum::{routing::get, Error, Router};
+use controllers::ws_game;
 use tera::Tera;
 use tower_http::services::ServeDir;
 use reqwest::Response;
@@ -53,6 +54,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(controllers::index))
+        .route("/ws", ws_game)
         .nest_service("/public", ServeDir::new("public"))
         .with_state(state);
 

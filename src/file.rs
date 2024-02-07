@@ -1,4 +1,7 @@
-use axum::{http::StatusCode, response::{IntoResponse, Response, Html}};
+use axum::{
+    http::StatusCode,
+    response::{Html, IntoResponse, Response},
+};
 
 use std::{fs, sync::Arc};
 
@@ -28,11 +31,10 @@ impl FileType {
             FileType::Html => "text/html".to_string(),
             FileType::Css => "text/css".to_string(),
             FileType::Js => "text/js".to_string(),
-            FileType::Undefined => "text/undefined".to_string()
+            FileType::Undefined => "text/undefined".to_string(),
         }
     }
 }
-
 
 pub fn file_to_string(path: String) -> String {
     match fs::read_to_string(format!("public/{}", path)) {

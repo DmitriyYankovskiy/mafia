@@ -1,8 +1,11 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::hash;
+use std::rc::{Rc, Weak};
 
+use crate::characters::{Character, Role};
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
-use crate::characters::{Role, Character};
 
 pub enum GameState {
     Setup(Setup),
@@ -18,7 +21,7 @@ impl GameState {
         roles.insert(Role::Maniac, 0);
         roles.insert(Role::Mafia, 0);
         GameState::Setup(Setup {
-            players: HashSet::<Player>::new(),
+            players: HashMap::new(),
             roles,
         })
     }
@@ -26,25 +29,21 @@ impl GameState {
     pub fn start(mut self) -> Result<(), &'static str> {
         if let GameState::Setup(mut setup) = self {
             let mut rng = thread_rng();
-            
-            let mut players: Vec<Player> = setup.players.clone().into_iter().collect();
+
+            let mut players: HashMap<String, Rc<RefCell<Player>>> = setup.players.into_iter().map(|(k, v)| (k, Rc::new(RefCell::new(v)))).collect();
             let mut roles = setup.get_roles();
-            players.shuffle(&mut rng);
+
+            let mut players_vec: Vec<Rc<RefCell<Player>>> = players.clone().into_iter().map(|(k, v)| v.clone()).collect();
+            players_vec.shuffle(&mut rng);
             roles.shuffle(&mut rng);
-            
+
             let mut characters = Vec::<Character>::new();
-            
-            for i in 0..(players.len()) {
-                characters.push(Character::new(
-                    i,
-                    players[i].clone(),
-                    roles[i],
-                ));
+
+            for i in 0..(players_vec.len()) {
+                characters.push(Character::new(i, Rc::downgrade(&players_vec[i]), roles[i]));
             }
 
-            self = GameState::On(Game {
-                characters,
-            });
+            self = GameState::On(Game { characters: characters.into_iter().map(RefCell::new).map(Rc::new).collect(), players: Vec::new() });
 
             Ok(())
         } else {
@@ -61,15 +60,13 @@ impl GameState {
     }
 }
 
-
-
 pub struct Setup {
     roles: HashMap<Role, usize>,
-    players: HashSet<Player>,
+    players: HashMap<String, Player>,
 }
 impl Setup {
     fn add_player(&mut self, player: Player) -> usize {
-        self.players.insert(player);
+        self.players.insert(player.name, player);
         *self.roles.get_mut(&Role::Civilian).unwrap() += 1;
         self.players.len()
     }
@@ -77,27 +74,26 @@ impl Setup {
     fn get_roles(&mut self) -> Vec<Role> {
         let mut roles = Vec::<Role>::new();
         for (role, cnt) in &self.roles {
-            roles.append(&mut  vec![*role; *cnt]);
+            roles.append(&mut vec![*role; *cnt]);
         }
         roles
     }
 }
 
-
-
 pub struct Game {
-    characters: Vec<Character>,
+    characters: Vec<Rc<RefCell<Character>>>,
+    players: HashMap<String, Rc<RefCell<Player>>>,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct Player {
-    name: String,
+    pub name: String,
+
+    character: Weak<Character>,
 }
 
 impl Player {
     fn new(name: String, num: usize) -> Self {
-        Player {
-            name,
-        }
+        Player { name, character: Weak::new() }
     }
 }
