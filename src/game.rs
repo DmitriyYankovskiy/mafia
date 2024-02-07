@@ -30,7 +30,7 @@ impl GameState {
         if let GameState::Setup(mut setup) = self {
             let mut rng = thread_rng();
 
-            let mut players: HashMap<String, Rc<RefCell<Player>>> = setup.players.into_iter().map(|(k, v)| (k, Rc::new(RefCell::new(v)))).collect();
+            let mut players: HashMap<String, Rc<RefCell<Player>>> = setup.players.clone().into_iter().map(|(k, v)| (k, Rc::new(RefCell::new(v)))).collect();
             let mut roles = setup.get_roles();
 
             let mut players_vec: Vec<Rc<RefCell<Player>>> = players.clone().into_iter().map(|(k, v)| v.clone()).collect();
@@ -66,7 +66,7 @@ pub struct Setup {
 }
 impl Setup {
     fn add_player(&mut self, player: Player) -> usize {
-        self.players.insert(player.name, player);
+        self.players.insert(player.name.clone(), player);
         *self.roles.get_mut(&Role::Civilian).unwrap() += 1;
         self.players.len()
     }
@@ -88,7 +88,6 @@ pub struct Game {
 #[derive(Clone, Debug)]
 pub struct Player {
     pub name: String,
-
     character: Weak<Character>,
 }
 
