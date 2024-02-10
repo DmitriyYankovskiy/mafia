@@ -20,5 +20,5 @@ pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 pub async fn ws(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
-    ws.on_upgrade(move|ws| async{websockets::player(ws, state)})
+    ws.on_upgrade(move|ws| {websockets::player(ws, state)})
 }

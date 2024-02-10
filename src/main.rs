@@ -1,4 +1,5 @@
 use axum::{routing::get, Error, Router};
+use game::{Game, GameState, Setup};
 use tera::Tera;
 use tower_http::services::ServeDir;
 use reqwest::Response;
@@ -6,8 +7,8 @@ use reqwest::Response;
 use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
-use std::{net::SocketAddr, ops::Deref, sync::Arc};
-pub use std::{fs, sync::Mutex, collections::HashMap};
+use std::{net::SocketAddr, sync::Arc, ops::Deref, collections::HashMap, fs};
+use tokio::sync::Mutex;
 
 mod file;
 
@@ -42,6 +43,7 @@ fn loop_filter<'a, 'b>(val: &'a Value, args: &'b HashMap<String, Value>) -> tera
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
+    pub game: Arc<Mutex<GameState>>,
 }
 
 #[tokio::main]
@@ -52,6 +54,7 @@ async fn main() {
 
     let state = AppState {
         tera: Arc::new(tera),
+        game: Arc::new(Mutex::new(GameState::new())),
     };
 
     let app = Router::new()

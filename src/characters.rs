@@ -1,4 +1,5 @@
-use std::{cell::RefCell, rc::Weak};
+use std::{cell::RefCell, sync::Weak};
+use tokio::sync::Mutex;
 
 use crate::game::Player;
 
@@ -6,12 +7,12 @@ pub type Num = usize;
 
 pub struct Character {
     num: Num,
-    player: Weak<RefCell<Player>>,
+    player: Weak<Mutex<Player>>,
     role: Role,
 }
 
 impl Character {
-    pub fn new(num: Num, player: Weak<RefCell<Player>>, role: Role) -> Self {
+    pub fn new(num: Num, player: Weak<Mutex<Player>>, role: Role) -> Self {
         Character { player, role, num }
     }
 }
