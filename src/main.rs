@@ -34,17 +34,17 @@ pub struct PlayerInfo<T> {
 //     ));
 // }
 
-fn loop_filter(v: Value, hm: HashMap<String, Value>) -> Result<Value, String> {
-    let string = match v.as_str() {
-        Some(s) => s,
-        None => "",
-    }.to_string();
-    let mut ans: String;
-    for i in 0..3 {
-        ans.push_str(&string)
-    }
-    Result::Ok(Value::String(ans))
-}
+// fn loop_filter(v: &Value, hm: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+//     let string = match v.as_str() {
+//         Some(s) => s,
+//         None => "",
+//     }.to_string();
+//     let mut ans = "".to_string();
+//     for i in 0..3 {
+//         ans.push_str(&string)
+//     }
+//     Result::Ok(Value::String(ans))
+// }
 
 #[derive(Clone)]
 pub struct AppState {
@@ -55,7 +55,6 @@ pub struct AppState {
 async fn main() {
     let mut tera = Tera::new("public/**/*.*").unwrap();
     tera.autoescape_on(vec![]);
-    tera.register_filter("loop", loop_filter);
 
     let state = AppState {
         tera: Arc::new(tera),
