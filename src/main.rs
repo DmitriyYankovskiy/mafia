@@ -23,21 +23,32 @@ mod characters;
 #[serde(rename_all = "camelCase")]
 pub struct PlayerInfo {
     name: String,
+    info: T,
 }
 
-fn loop_filter<'a, 'b>(val: &'a Value, args: &'b HashMap<String, Value>) -> tera::Result<Value> {
-    let string = val.as_str().unwrap_or("").to_string();
-    let mut ans = "".to_string();
+// fn hbs_init(hbs: &mut Handlebars) {
+//     hbs.register_helper("partial", Box::new(
+//         |h: &handlebars::Helper, hbs: &Handlebars, ctx: &handlebars::Context, rc: &mut handlebars::RenderContext, out: &mut dyn handlebars::Output| -> HelperResult {
+//             let name =
+//             h.param(0).ok_or(handlebars::RenderErrorReason::ParamNotFoundForIndex("closure-helper", 0))?;
 
-    let count = match args.get(&"count".to_string()) {
-        Some(val) => val.as_u64().unwrap_or(0),
-        None => 0,
-    };
-    for i in 0..count {
-        ans.push_str(&string);
-    }
-    tera::Result::Ok(Value::String(ans))
-}
+//             out.write(file::file_to_string(name.value().render()).as_str())?;
+//             Ok(())
+//         }
+//     ));
+// }
+
+// fn loop_filter(v: Value, hm: HashMap<String, Value>) -> Result<Value, String> {
+//     let string = match v.as_str() {
+//         Some(s) => s,
+//         None => "",
+//     }.to_string();
+//     let mut ans: String;
+//     for i in 0..3 {
+//         ans.push_str(&string)
+//     }
+//     Result::Ok(Value::String(ans))
+// }
 
 #[derive(Clone)]
 pub struct AppState {
@@ -49,7 +60,6 @@ pub struct AppState {
 async fn main() {
     let mut tera = Tera::new("public/**/*.*").unwrap();
     tera.autoescape_on(vec![]);
-    tera.register_filter("loop", loop_filter);
 
     let state = AppState {
         tera: Arc::new(tera),

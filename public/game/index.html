@@ -5,11 +5,14 @@
     </div>
     <div class="main-section" id="main-section">
         <div class="round-table" id="round-table">
-            {% filter loop(count = 3) %}
-                <div>
-                    000
+            {% for player in players %}
+                <div class="player unselected-player" id="player-{{player.number}}">
+                    <span class="player-number" id="player-number-{{player.number}}">
+                        {{player.number}}
+                    </span>
                 </div>
-            {% endfilter %}
+            {% endfor %}
         </div>
     </div>
 </div>
+<script type="module" src="/public/game/index.js"></script>
