@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 use std::{net::SocketAddr, sync::Arc, ops::Deref, collections::HashMap, fs};
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc::Sender, Mutex};
 
 mod file;
 
@@ -21,9 +21,8 @@ mod characters;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct PlayerInfo<T> {
+pub struct PlayerInfo {
     name: String,
-    info: T,
 }
 
 fn loop_filter<'a, 'b>(val: &'a Value, args: &'b HashMap<String, Value>) -> tera::Result<Value> {

@@ -88,11 +88,12 @@ pub struct Game {
 pub struct Player {
     pub name: String,
     pub ws_tx: Sender<String>,
+    pub ws_rx: Arc<Mutex<Receiver<String>>>,
     pub character: Weak<Character>,
 }
 
 impl Player {
-    pub fn new(name: String, ws_tx: Sender<String>) -> Self {
-        Player { name, character: Weak::new(), ws_tx}
+    pub fn new(name: String, ws_tx: Sender<String>, ws_rx: Arc<Mutex<Receiver<String>>>) -> Self {
+        Player { name, character: Weak::new(), ws_tx, ws_rx}
     }
 }
