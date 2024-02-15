@@ -6,11 +6,13 @@
     <div class="main-section" id="main-section">
         <div class="round-table" id="round-table">
             {% for player in players %}
-                <div class="player" id="player-{{player.number}}">
-                    {{player.number}}
+                <div class="player unselected-player" id="player-{{player.number}}">
+                    <span class="player-number" id="player-number-{{player.number}}">
+                        {{player.number}}
+                    </span>
                 </div>
             {% endfor %}
         </div>
     </div>
 </div>
-<script src="/public/game/index.js"></script>
+<script type="module" src="/public/game/index.js"></script>

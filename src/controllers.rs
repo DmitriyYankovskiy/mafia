@@ -15,7 +15,11 @@ pub async fn index(State(state): State<AppState>) -> Response {
             {"number": 3},
             {"number": 4},
             {"number": 5},
-            {"number": 6}
+            {"number": 6},
+            {"number": 7},
+            {"number": 8},
+            {"number": 9},
+            {"number": 10}
         ]
     })).unwrap();
     context.insert("page", &tera.render("game/index.html", &context).unwrap());
