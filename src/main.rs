@@ -22,8 +22,7 @@ mod characters;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerInfo {
-    name: String,
-    info: T,
+    name: String
 }
 
 // fn hbs_init(hbs: &mut Handlebars) {

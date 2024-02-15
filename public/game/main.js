@@ -1,28 +1,35 @@
 import Table from "./table.js";
 import Socket from "./websocket.js";
 
-let players = [];
-let tableDiv = document.getElementById("round-table");;
-let phase = "starting"
-
+let tableDiv = document.getElementById("round-table");
 function Player(number) {
     this.number = number;
     this.state = "alive";
     this.element = document.getElementById(`player-${number}`);
+    this.type = ""
 }
-
-function init() {
+let Main = {};
+Main.players = {};
+Main.phase = "starting";
+Main.tableDiv = tableDiv;
+Main.me = {
+    role: "citizen",
+    number: 1
+}
+Main.init = function() {
     for (let i = 1; i <= tableDiv.childElementCount; i++) {
-        players.push(new Player(i));
+        this.players[i] = new Player(i);
     }
     Socket.init();
     Table.init();
-}
-
-let Main = {
-    init: init,
-    players: players,
-    tableDiv: tableDiv,
-}
+    this.startGame({"role": "a", "number": 1})
+};
+Main.startGame = function (data) {
+    this.me.role = data.role;
+    this.me.number = data.number;
+    this.players[this.me.number].type = "me";
+    Table.redrawTable();
+    Table.showRole();
+};
 
 export default Main;

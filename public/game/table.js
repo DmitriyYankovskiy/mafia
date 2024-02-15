@@ -7,12 +7,29 @@ function getWidth(element) {
     return window.getComputedStyle(element).width.split("p")[0];;
 }
 
-function redrawTable() {
+
+
+function playerClickListener(e) {
+    let number = e.target.id.split("-");
+    number = number[number.length - 1];
+    for (let i in players) {
+        if (players[i].number == number) {
+            players[i].element.classList.add("selected-player");
+            players[i].element.classList.remove("unselected-player");
+        } else {
+            players[i].element.classList.remove("selected-player");
+            players[i].element.classList.add("unselected-player");
+        }
+    }
+    Table.redrawTable();
+}
+let Table = {};
+Table.redrawTable = function() {
     if (players.length == 0) {
         return 0;
     }
     let alivePlayers = [];
-    for (let i = 0; i < players.length; i++) {
+    for (let i in players) {
         if (players[i].state == "alive") {
             alivePlayers.push(players[i]);
         }
@@ -25,35 +42,20 @@ function redrawTable() {
         let playerSize = getWidth(alivePlayers[i].element);
         alivePlayers[i].element.style.top = `${-Math.sin(1.5 * Math.PI - deltaAngle * i) * tableSize / 2 + tableSize / 2 - playerSize / 2}px`;
         alivePlayers[i].element.style.left = `${Math.cos(1.5 * Math.PI - deltaAngle * i) * tableSize / 2 + tableSize / 2 - playerSize / 2}px`;
-    }
-}
-
-function playerClickListener(e) {
-    let number = e.target.id.split("-");
-    number = number[number.length - 1];
-    for (let i of players) {
-        if (i.number == number) {
-            i.element.classList.add("selected-player");
-            i.element.classList.remove("unselected-player");
-        } else {
-            i.element.classList.remove("selected-player");
-            i.element.classList.add("unselected-player");
+        if (alivePlayers[i].type == "me") {
+            alivePlayers[i].element.classList.add("me-player");
         }
     }
-    redrawTable();
 }
-
-function init() {
+Table.init = function () {
     players = Main.players;
     tableDiv = Main.tableDiv;
-    for (let i = 0; i < players.length; i++) {
+    for (let i in players) {
         players[i].element.addEventListener("click", playerClickListener);
     }
-    redrawTable();
+    this.redrawTable();
 }
+Table.showRole = function () {
 
-let Table = {
-    init: init,
 }
-
 export default Table;
