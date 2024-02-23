@@ -29,13 +29,22 @@
     border-radius: 50%;
 }
 
+.player-container {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1/1;
+    height: 150px;
+}
+
 .player {
-    position:  absolute;
     border-radius: 50%;
     display: flex;
     aspect-ratio: 1/1;
     align-items: center;
     justify-content: center;
+    transition: 0.5s;
 }
 
 .selected-player {
@@ -51,6 +60,7 @@
 }
 
 .player-number {
+    user-select: none;
     font-size: 4em;
 }
 

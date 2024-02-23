@@ -12,6 +12,7 @@ let Main = {};
 Main.players = {};
 Main.phase = "starting";
 Main.tableDiv = tableDiv;
+Main.selectedPlayer = [];
 Main.me = {
     role: "citizen",
     number: 1
@@ -22,14 +23,22 @@ Main.init = function() {
     }
     Socket.init();
     Table.init();
-    this.startGame({"role": "a", "number": 1})
+    this.gameEvents.startGame({"role": "a", "number": 1})
 };
-Main.startGame = function (data) {
+Main.gameEvents.startGame = function (data) {
     this.me.role = data.role;
     this.me.number = data.number;
     this.players[this.me.number].type = "me";
     Table.redrawTable();
     Table.showRole();
+};
+
+Main.gameEvents.startNight = function () {
+    Table.gameEvents.startNight();
+};
+
+Main.gameEvents.startDay = function () {
+    Table.gameEvents.startDay();
 };
 
 export default Main;

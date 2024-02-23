@@ -4,7 +4,7 @@ let players;
 let tableDiv;
 
 function getWidth(element) {
-    return window.getComputedStyle(element).width.split("p")[0];;
+    return window.getComputedStyle(element).width.split("p")[0];
 }
 
 
@@ -16,6 +16,8 @@ function playerClickListener(e) {
         if (players[i].number == number) {
             players[i].element.classList.add("selected-player");
             players[i].element.classList.remove("unselected-player");
+            Main.selectedPlayers = [];
+            selectedPlayers.add(players[i]);
         } else {
             players[i].element.classList.remove("selected-player");
             players[i].element.classList.add("unselected-player");
@@ -39,14 +41,15 @@ Table.redrawTable = function() {
     let tableSize = getWidth(tableDiv);
     let deltaAngle = Math.PI * 2 / aliveCount;
     for (let i = 0; i < aliveCount; i++) {
-        let playerSize = getWidth(alivePlayers[i].element);
-        alivePlayers[i].element.style.top = `${-Math.sin(1.5 * Math.PI - deltaAngle * i) * tableSize / 2 + tableSize / 2 - playerSize / 2}px`;
-        alivePlayers[i].element.style.left = `${Math.cos(1.5 * Math.PI - deltaAngle * i) * tableSize / 2 + tableSize / 2 - playerSize / 2}px`;
+        let playerSize = getWidth(alivePlayers[i].element.parentElement);
+        alivePlayers[i].element.parentElement.style.top = `${-Math.sin(1.5 * Math.PI - deltaAngle * i) * tableSize / 2 + tableSize / 2 - playerSize / 2}px`;
+        alivePlayers[i].element.parentElement.style.left = `${Math.cos(1.5 * Math.PI - deltaAngle * i) * tableSize / 2 + tableSize / 2 - playerSize / 2}px`;
         if (alivePlayers[i].type == "me") {
             alivePlayers[i].element.classList.add("me-player");
         }
     }
 }
+
 Table.init = function () {
     players = Main.players;
     tableDiv = Main.tableDiv;
@@ -55,7 +58,16 @@ Table.init = function () {
     }
     this.redrawTable();
 }
+
 Table.showRole = function () {
+    
+}
+
+Table.gameEvents.startNight = function () {
+
+}
+
+Table.gameEvents.startDay = function () {
 
 }
 export default Table;
