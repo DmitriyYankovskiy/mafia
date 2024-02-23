@@ -1,13 +1,11 @@
 import Main from "./main.js";
 
 let players;
-let tableDiv;
+let table_element;
 
 function getWidth(element) {
     return window.getComputedStyle(element).width.split("p")[0];
 }
-
-
 
 function playerClickListener(e) {
     let number = e.target.id.split("-");
@@ -17,7 +15,7 @@ function playerClickListener(e) {
             players[i].element.classList.add("selected-player");
             players[i].element.classList.remove("unselected-player");
             Main.selectedPlayers = [];
-            selectedPlayers.add(players[i]);
+            Main.selectedPlayers.push(players[i]);
         } else {
             players[i].element.classList.remove("selected-player");
             players[i].element.classList.add("unselected-player");
@@ -26,6 +24,8 @@ function playerClickListener(e) {
     Table.redrawTable();
 }
 let Table = {};
+Table.background_element = document.getElementById("background");
+
 Table.redrawTable = function() {
     if (players.length == 0) {
         return 0;
@@ -38,7 +38,7 @@ Table.redrawTable = function() {
         players[i].element.display = "none";
     }
     let aliveCount = alivePlayers.length;
-    let tableSize = getWidth(tableDiv);
+    let tableSize = getWidth(table_element);
     let deltaAngle = Math.PI * 2 / aliveCount;
     for (let i = 0; i < aliveCount; i++) {
         let playerSize = getWidth(alivePlayers[i].element.parentElement);
@@ -52,10 +52,17 @@ Table.redrawTable = function() {
 
 Table.init = function () {
     players = Main.players;
-    tableDiv = Main.tableDiv;
+    table_element = Main.table_element;
     for (let i in players) {
         players[i].element.addEventListener("click", playerClickListener);
     }
+    this.background_element.addEventListener("click", function (e) {
+        if (Main.day_or_night == "day") {
+            Main.gameEvents.startNight();
+        } else {
+            Main.gameEvents.startDay();
+        }
+    });
     this.redrawTable();
 }
 
@@ -63,11 +70,15 @@ Table.showRole = function () {
     
 }
 
-Table.gameEvents.startNight = function () {
+Table.gameEvents = {};
 
+Table.gameEvents.startNight = function () {
+    Table.background_element.classList.remove("background-night");
+    Table.background_element.classList.add("background-day");
 }
 
 Table.gameEvents.startDay = function () {
-
+    Table.background_element.classList.add("background-night");
+    Table.background_element.classList.remove("background-day");
 }
 export default Table;

@@ -57,7 +57,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
-    let mut tera = Tera::new("public/**/*.*").unwrap();
+    let mut tera = Tera::new("public/**/*.html").unwrap();
     tera.autoescape_on(vec![]);
 
     let state = AppState {
