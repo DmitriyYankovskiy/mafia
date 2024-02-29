@@ -2,9 +2,11 @@ use std::{cell::RefCell, collections::{HashMap, HashSet}, hash, sync::{Arc, Weak
 use serde::Deserialize;
 use tokio::sync::{mpsc::{self, Receiver, Sender}, Mutex};
 
-use crate::characters::{Character, Role};
-use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng};
+use crate::{
+    characters::{Character, Role},
+    game_loop::GameLoop,
+};
+use rand::{thread_rng, seq::SliceRandom};
 
 pub enum GameState {
     Setup(Setup),
@@ -42,7 +44,7 @@ impl GameState {
                 characters.push(Character::new(i, Arc::downgrade(&players_vec[i]), roles[i]));
             }
 
-            self = GameState::On(Game { characters: characters.into_iter().map(Mutex::new).map(Arc::new).collect(), players});
+            self = GameState::On(Game { characters: characters.into_iter().map(Mutex::new).map(Arc::new).collect(), players, game_loop: GameLoop::new() });
 
             Ok(())
         } else {
@@ -82,6 +84,7 @@ impl Setup {
 pub struct Game {
     characters: Vec<Arc<Mutex<Character>>>,
     players: HashMap<String, Arc<Mutex<Player>>>,
+    game_loop: GameLoop,
 }
 
 #[derive(Debug, Clone)]
