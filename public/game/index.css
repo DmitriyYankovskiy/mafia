@@ -73,6 +73,12 @@
 .role-span {
     margin-bottom: 30px;
     font-size: 2em;
+    transition: 0.5s;
+}
+
+.hidden-span {
+    user-select: none;
+    color: #ffffff00;
 }
 
 .player-number {

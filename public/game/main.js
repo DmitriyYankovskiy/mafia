@@ -40,6 +40,7 @@ Main.gameEvents.startGame = function (data) {
     Main.players[Main.me.number].type = "me";
     Table.redrawTable();
     Table.showRole();
+    setTimeout(Table.hideRole, 3000);
 };
 
 Main.gameEvents.startNight = function () {

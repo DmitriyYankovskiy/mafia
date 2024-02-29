@@ -24,7 +24,10 @@ function playerClickListener(e) {
     Table.redrawTable();
 }
 let Table = {};
+
 Table.background_element = document.getElementById("background");
+Table.role_span_element = document.getElementById("role-span");
+Table.show_my_role_element = document.getElementById("show-my-role-button");
 
 Table.redrawTable = function() {
     if (players.length == 0) {
@@ -56,18 +59,31 @@ Table.init = function () {
     for (let i in players) {
         players[i].element.addEventListener("click", playerClickListener);
     }
-    this.background_element.addEventListener("click", function (e) {
+    Table.background_element.addEventListener("click", function (e) {
         if (Main.day_or_night == "day") {
             Main.gameEvents.startNight();
         } else {
             Main.gameEvents.startDay();
         }
     });
+    Table.show_my_role_element.addEventListener("mousedown", function (e) {
+        Table.showRole();
+    });
+    Table.show_my_role_element.addEventListener("mouseup", function (e) {
+        Table.hideRole();
+    });
+    Table.show_my_role_element.addEventListener("mouseout", function (e) {
+        Table.hideRole();
+    });
     this.redrawTable();
 }
 
 Table.showRole = function () {
-    
+    Table.role_span_element.classList.remove("hidden-span");
+}
+
+Table.hideRole = function () {
+    Table.role_span_element.classList.add("hidden-span");
 }
 
 Table.gameEvents = {};
