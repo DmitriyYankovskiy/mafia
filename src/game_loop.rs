@@ -1,15 +1,38 @@
 use core::num;
 use std::collections::HashSet;
 
-use crate::characters::Num;
+use crate::characters::{Num, Role};
 
-struct GameLoop {
+pub struct GameLoop {
     stage: Stage,
     round: usize,
 }
 
+pub enum Stage {
+    Night {
+        mafia_target: Option<Num>,
+        maniac_target: Option<Num>,
+        checked: Option<Num>,
+    },
+    Sunrise {
+        idx: usize,
+        dies: Vec<Num>,
+    },
+    Discussion {
+        num: Num,
+        accuses: HashSet<Num>,
+    },
+    Voting {
+        canditates: Vec<Candidate>,
+    },
+    Sunset {
+        idx: usize,
+        dies: Vec<Num>,
+    },
+}
+
 impl GameLoop {
-    fn new() -> Self {
+    pub fn new() -> Self {
         GameLoop {
             stage: Stage::new(),
             round: 0,
@@ -21,40 +44,69 @@ impl GameLoop {
         self.round
     }
 
-    fn next(&mut self) {
-        let stage = &mut self.stage; 
-        match stage {
+    pub fn next(&mut self) {
+        self.stage = match &self.stage {
             Stage::Night {
-                time,
-                dies,
+                checked,
+                mafia_target,
+                maniac_target,
             } => {
-                *stage = Stage::Sunrise { idx: 0, dies: dies };
+                let mut dies: Vec<Num> = Vec::new();
+                if let Some(mafia_target) = mafia_target {
+                    dies.push(*mafia_target);
+                }
+
+                if let Some(maniac_target) = maniac_target {
+                    dies.push(*maniac_target);
+                }
+
+                Stage::Sunrise { idx: 0, dies, }
             },
             Stage::Sunrise {
                 idx,
                 dies,
             } => {
-                *stage = Stage::Discussion {num: self.get_round(), accuses: HashSet::<Num>::new()};
+                Stage::Discussion {num: self.get_round(), accuses: HashSet::<Num>::new()}
             }
-        }
+            Stage::Discussion {
+                num,
+                accuses,
+            } => {
+                Stage::Voting {
+                    canditates: accuses.into_iter().map(|&num: &Num| Candidate::new(num, 0)).collect(),
+                }
+            }
+            Stage::Voting { 
+                canditates 
+            } => {
+                let mut max_votes = 0;
+                let mut dies = Vec::<Num>::new();
+                for candidate in canditates {
+                    if max_votes < candidate.cnt_votes {
+                        max_votes = candidate.cnt_votes;
+                        dies = Vec::new();
+                        dies.push(candidate.num);
+                    } else if max_votes == candidate.cnt_votes {
+                        dies = Vec::new();
+                    }
+                }
+                Stage::Sunset {
+                    idx: 0,
+                    dies,
+                }
+            }
+            Stage::Sunset {
+                idx,
+                dies,
+            } => {
+                Stage::Night {
+                    checked: None,
+                    mafia_target: None,
+                    maniac_target: None,
+                }
+            }
+        };
     }
-}
-
-pub enum Stage {
-    Night {
-        time: usize,
-        dies: HashSet<Num>,
-    },
-    Sunrise {
-        idx: usize,
-        dies: HashSet<Num>,
-    },
-    Discussion {
-        num: Num,
-        accuses: HashSet<Num>,
-    },
-    Voting(Discussion),
-    Sunset,
 }
 
 impl Stage {
@@ -65,28 +117,14 @@ impl Stage {
 
 struct Candidate {
     num: Num,
-    cnt_vote: usize,
+    cnt_votes: usize,
 }
 
 impl Candidate {
-    pub fn new(num: Num, cnt_vote: usize) -> Self {
-        Candidate {
+    pub fn new(num: Num, cnt_votes: usize) -> Self {
+        Self {
             num,
-            cnt_vote,
-        }
-    }
-}
-
-struct Discussion {
-    idx: usize,
-    candidates: Vec<Candidate>,
-}
-
-impl From<HashSet<Num>> for Discussion {
-    fn from(value: HashSet<Num>) -> Self {
-        Discussion {
-            idx: 0,
-            candidates: value.into_iter().map(|num: Num| Candidate::new(num, 0)).collect(),
+            cnt_votes,
         }
     }
 }
