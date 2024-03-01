@@ -1,20 +1,19 @@
-use core::num;
 use std::collections::HashSet;
 
 use crate::characters::{Num, Role};
 
 pub struct GameLoop {
-    stage: Stage,
+    pub stage: Stage,
     round: usize,
 }
 
 pub enum Stage {
     Night {
-        mafia_target: Option<Num>,
+        mafia_targets: HashSet<Num>,
         maniac_target: Option<Num>,
         checked: Option<Num>,
     },
-    Sunrise {
+    Sunrise { 
         idx: usize,
         dies: Vec<Num>,
     },
@@ -48,12 +47,12 @@ impl GameLoop {
         self.stage = match &self.stage {
             Stage::Night {
                 checked,
-                mafia_target,
+                mafia_targets,
                 maniac_target,
             } => {
                 let mut dies: Vec<Num> = Vec::new();
-                if let Some(mafia_target) = mafia_target {
-                    dies.push(*mafia_target);
+                if mafia_targets.len() != 1 {
+                    dies.push(mafia_targets.clone().into_iter().collect::<Vec<Num>>()[0]);
                 }
 
                 if let Some(maniac_target) = maniac_target {
@@ -101,7 +100,7 @@ impl GameLoop {
             } => {
                 Stage::Night {
                     checked: None,
-                    mafia_target: None,
+                    mafia_targets: HashSet::new(),
                     maniac_target: None,
                 }
             }

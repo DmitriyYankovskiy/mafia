@@ -1,24 +1,22 @@
 use axum::{routing::get, Error, Router};
-use game::{Game, GameState, Setup};
+use game::GameState;
 use tera::Tera;
 use tower_http::services::ServeDir;
-use reqwest::Response;
 
 use serde::{Serialize, Deserialize};
-use serde_json::{json, Value};
 
-use std::{net::SocketAddr, sync::Arc, ops::Deref, collections::HashMap, fs};
-use tokio::sync::{mpsc::Sender, Mutex};
+use std::{net::SocketAddr, sync::Arc};
 
+// ------- mod -------
+mod player;
 mod file;
-
 mod controllers;
 mod websockets;
-
 mod game;
 mod game_loop;
-
 mod characters;
+// -------------------
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -29,7 +27,7 @@ pub struct PlayerInfo {
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
-    pub game: Arc<Mutex<GameState>>,
+    pub game: GameState,
 }
 
 
@@ -40,7 +38,7 @@ async fn main() {
 
     let state = AppState {
         tera: Arc::new(tera),
-        game: Arc::new(Mutex::new(GameState::new())),
+        game: GameState::new(),
     };
 
     let app = Router::new()
