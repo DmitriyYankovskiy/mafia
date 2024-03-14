@@ -1,5 +1,5 @@
 use axum::{routing::get, Error, Router};
-use game::GameState;
+use game_state::GameState;
 use tera::Tera;
 use tower_http::services::ServeDir;
 
@@ -8,13 +8,10 @@ use serde::{Serialize, Deserialize};
 use std::{net::SocketAddr, sync::Arc};
 
 // ------- mod -------
-mod player;
 mod file;
 mod controllers;
 mod websockets;
-mod game;
-mod game_loop;
-mod characters;
+mod game_state;
 // -------------------
 
 

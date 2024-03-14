@@ -2,6 +2,7 @@
     "7": {
         "mafia": 2,
         "sheriff": true,
-        "maniac": false
+        "maniac": false,
+        "civilian": 4
     }
 }

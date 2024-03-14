@@ -4,11 +4,13 @@ use serde_json::from_str;
 use serde::Deserialize;
 
 use axum::extract::ws::{Message, WebSocket};
-use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::sync::{broadcast, mpsc::{self, Sender}, Mutex};
 
 use crate::{
-    game::GameState,
-    player::Player,
+    game_state:: {
+        GameState,
+        game::player::Player,
+    },
     AppState,
     PlayerInfo,
 };
@@ -28,7 +30,7 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
         if let Ok(msg_str) = msg.to_text() {
             if let Ok(player_info) = from_str::<PlayerInfo>(msg_str) {
                 if let GameState::Setup(setup) = &mut game {
-                    setup.lock().await.add_player(Player::new(player_info.name, res_tx.clone(), req_rx)).await.unwrap();
+                    setup.lock().await.add_player(Player::new(player_info.name, Sender::clone(&res_tx), req_rx)).await.unwrap();
                 }
 
                 break;
@@ -37,7 +39,7 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
     }
 
     let ws_req = Arc::new(Mutex::new(ws));
-    let ws_res = ws_req.clone();
+    let ws_res = Arc::clone(&ws_req);
     
     tokio::spawn(async move {
         while let Some(msg) = res_rx.recv().await {

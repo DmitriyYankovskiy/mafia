@@ -1,16 +1,14 @@
 use std::sync::{Arc, Weak};
 use tokio::sync::{mpsc::{Receiver, Sender}, Mutex};
 
-use serde::{Serialize, Deserialize};
-
-use crate::{
-    characters::Character,
-    game::Game,
+use super::{
+    character::Character,
+    Game,
 };
 
 mod message {
     use serde::{Serialize, Deserialize};
-    use crate::characters::Num;
+    use super::super::character::Num;
 
     #[derive(Serialize, Deserialize)]
     pub enum Case {
@@ -59,25 +57,35 @@ impl Player {
             let game = self.get_game().await;
             match msg.case {
                 Case::MafiaKill => {
-                    game.lock().await.mafia_kill(
+                    _ = game.lock().await.mafia_kill(
                         self.get_character().lock().await.num,
                         msg.target,
                     ).await;
                 },
                 Case::ManiacKill => {
-
+                    _ = game.lock().await.maniac_kill(
+                        self.get_character().lock().await.num,
+                        msg.target,
+                    ).await;
                 },
                 Case::Check => {
-
+                    _ = game.lock().await.check(
+                        self.get_character().lock().await.num,
+                        msg.target,
+                    ).await;
                 },
                 Case::Vote => {
-
+                    _ = game.lock().await.vote(
+                        self.get_character().lock().await.num,
+                    )
                 },
                 Case::Accuse => {
-
+                    _ = game.lock().await.accuse(
+                        self.get_character().lock().await.num,
+                        msg.target,
+                    )
                 },
-            };
-            
+            };           
 
         }
     }
