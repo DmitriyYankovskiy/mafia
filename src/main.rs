@@ -1,23 +1,19 @@
 use axum::{routing::get, Error, Router};
-use game::{Game, GameState, Setup};
+use game_state::GameState;
 use tera::Tera;
 use tower_http::services::ServeDir;
-use reqwest::Response;
 
 use serde::{Serialize, Deserialize};
-use serde_json::{json, Value};
 
-use std::{net::SocketAddr, sync::Arc, ops::Deref, collections::HashMap, fs};
-use tokio::sync::{mpsc::Sender, Mutex};
+use std::{net::SocketAddr, sync::Arc};
 
+// ------- mod -------
 mod file;
-
 mod controllers;
 mod websockets;
+mod game_state;
+// -------------------
 
-mod game;
-// mod game_loop;
-mod characters;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -25,35 +21,12 @@ pub struct PlayerInfo {
     name: String
 }
 
-// fn hbs_init(hbs: &mut Handlebars) {
-//     hbs.register_helper("partial", Box::new(
-//         |h: &handlebars::Helper, hbs: &Handlebars, ctx: &handlebars::Context, rc: &mut handlebars::RenderContext, out: &mut dyn handlebars::Output| -> HelperResult {
-//             let name =
-//             h.param(0).ok_or(handlebars::RenderErrorReason::ParamNotFoundForIndex("closure-helper", 0))?;
-
-//             out.write(file::file_to_string(name.value().render()).as_str())?;
-//             Ok(())
-//         }
-//     ));
-// }
-
-// fn loop_filter(v: Value, hm: HashMap<String, Value>) -> Result<Value, String> {
-//     let string = match v.as_str() {
-//         Some(s) => s,
-//         None => "",
-//     }.to_string();
-//     let mut ans: String;
-//     for i in 0..3 {
-//         ans.push_str(&string)
-//     }
-//     Result::Ok(Value::String(ans))
-// }
-
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
-    pub game: Arc<Mutex<GameState>>,
+    pub game: GameState,
 }
+
 
 #[tokio::main]
 async fn main() {
@@ -62,7 +35,7 @@ async fn main() {
 
     let state = AppState {
         tera: Arc::new(tera),
-        game: Arc::new(Mutex::new(GameState::new())),
+        game: GameState::new(),
     };
 
     let app = Router::new()
