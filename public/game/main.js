@@ -11,12 +11,16 @@ function Player(number) {
 }
 let Main = {};
 Main.players = {};
-Main.day_or_night = "day";
-Main.phase = "start-of-day";
+Main.day_or_night = "night";
+Main.phase = {
+    name: "night",
+    who_saying: 1,
+    able_to_selecting: true,
+}
 Main.table_element = table_element;
-Main.selectedPlayer = [];
+Main.selectedPlayers = [];
 Main.me = {
-    role: "citizen",
+    role: "Mafia",
     number: 1
 }
 Main.init = function() {
@@ -29,7 +33,7 @@ Main.init = function() {
     }
     Socket.init();
     Table.init();
-    this.gameEvents.startGame({"role": "a", "number": 1})
+    Main.gameEvents.startGame({"role": "Mafia", "number": 1})
 };
 
 Main.gameEvents = {};
@@ -44,13 +48,79 @@ Main.gameEvents.startGame = function (data) {
 };
 
 Main.gameEvents.startNight = function () {
-    Table.gameEvents.startNight();
     Main.day_or_night = "night";
+    Main.phase = {
+        name: "night",
+        able_to_selecting: (Main.me.role == "Cityzen" ? false : true),
+    }
+    Table.redrawTable();
 };
 
-Main.gameEvents.startDay = function () {
-    Table.gameEvents.startDay();
+Main.gameEvents.startSunrise = function () {
     Main.day_or_night = "day";
+    Main.phase = {
+        name: "sunrise",
+        able_to_selecting: false,
+    }
+    Table.redrawTable();
 };
+
+Main.gameEvents.startSaying = function () {
+    Main.day_or_night = "day";
+    Main.phase = {
+        name: "saying",
+        able_to_selecting: false,
+    }
+    Table.redrawTable();
+};
+
+Main.gameEvents.startVoting = function () {
+    Main.day_or_night = "day";
+    Main.phase = {
+        name: "voting",
+        target: 0,
+        able_to_selecting: true,
+    }
+};
+
+Main.gameEvents.votingFor = function (number) {
+    Main.phase.target = Main.players[number];
+    Table.redrawTable();
+}
+
+Main.gameEvents.startSunset = function () {
+    Main.day_or_night = "day";
+    Main.phase = {
+        name: "sunset",
+        target: 0,
+        able_to_selecting: false,
+    }
+    Table.redrawTable();
+};
+
+
+Main.playersEvents = {};
+
+Main.playersEvents.okPress = function() {
+    if (Main.phase.able_to_selecting) {
+        if (Main.day_or_night == "day") {
+            if (Main.phase.name == "saying") {
+                if (Main.phase.who_saying == Main.me.number) {
+                    Socket.pickPlayers(Main.selectedPlayers);
+                }
+                Main.phase.able_to_selecting = false;
+            }
+            Main.gameEvents.startNight();
+        } else if (Main.day_or_night == "night") {
+            if (Main.me.role != "Cityzen") {
+                Socket.pickPlayers(Main.selectedPlayers);
+                Main.phase.able_to_selecting = false;
+            }
+            Main.gameEvents.startVoting();
+            Main.gameEvents.votingFor(1);
+        }
+    }
+    Main.selectedPlayers = [];
+}
 
 export default Main;

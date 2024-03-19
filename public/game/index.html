@@ -1,16 +1,21 @@
 <link rel="stylesheet" href="/public/game/index.css">
-<div class="background background-day" id="background">
+<div class="background background-night" id="background">
     <div class="menu" id="menu">
 
     </div>
     <div class="main-section" id="main-section">
         <div class="round-table" id="round-table">
+            <div class="ok-button" id="ok-button">
+                <span class="ok-span" id="ok-span">
+                    OK
+                </span>
+            </div>
             <span class="role-span hidden-span" id="role-span">
                 Your role:
                 Cityzen
             </span>
             <div class="show-my-role-button" id="show-my-role-button">
-
+                <img class="show-my-role-img" src = "public/game/show_my_role.png">
             </div>
             {% for player in players %}
                 <div class="player-container" id="player-container-{{player.number}}">
