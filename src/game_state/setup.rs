@@ -37,8 +37,8 @@ impl Setup {
         if role_set.sheriff {
             roles.push(Role::Sheriff);
         }
-        if role_set.maniac {
-            roles.push(Role::Maniac);
+        if role_set.don {
+            roles.push(Role::Don);
         }
         while roles.len() < self.players.len() {
             roles.push(Role::Civilian);

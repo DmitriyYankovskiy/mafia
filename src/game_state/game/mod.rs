@@ -66,7 +66,7 @@ impl Game {
         for character in self.characters.iter() {
             match (*character.lock().await).role {
                 Role::Mafia => roles.mafia += 1,
-                Role::Maniac => roles.maniac = true,
+                Role::Don => roles.don = true,
                 Role::Sheriff => roles.sheriff = true,
                 Role::Civilian => roles.civilian += 1,
             };
@@ -221,7 +221,7 @@ impl Game {
         if let Some(num) = sheriff_check {
             for character in &self.characters {
                 if character.lock().await.role == Role::Sheriff {
-                    self.get_character(num).lock().await.role == Role::Mafia;
+                    self.get_character(num).lock().await.role.is_black();
                 }
             }
         }
