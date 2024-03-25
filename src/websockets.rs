@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use serde_json::from_str;
-use serde::Deserialize;
 
 use axum::extract::ws::{Message, WebSocket};
-use tokio::sync::{broadcast, mpsc::{self, Sender}, Mutex};
+use tokio::sync::{mpsc::{self, Sender}, Mutex};
 
 use crate::{
     game_state:: {
@@ -18,19 +17,18 @@ use crate::{
 const BUF: usize = 1000;
 
 pub async fn player(mut ws: WebSocket, state: AppState) {
-    let mut game = state.game;
+    let game = state.game;
 
-    let (req_tx, mut req_rx) = mpsc::channel::<String>(BUF);
+    let (req_tx, req_rx) = mpsc::channel::<String>(BUF);
     let (res_tx, mut res_rx) = mpsc::channel::<String>(BUF);
-    let mut name: Option<String> = None;
 
     let req_rx = Arc::new(Mutex::new(req_rx));
 
     while let Some(Ok(msg)) = ws.recv().await {
         if let Ok(msg_str) = msg.to_text() {
             if let Ok(player_info) = from_str::<PlayerInfo>(msg_str) {
-                if let GameState::Setup(setup) = &mut game {
-                    setup.lock().await.add_player(Player::new(player_info.name, Sender::clone(&res_tx), req_rx)).await.unwrap();
+                if let GameState::Setup(setup) = &mut *game.lock().await {
+                    setup.add_player(Player::new(player_info.name, Sender::clone(&res_tx), req_rx)).await.unwrap();
                 }
 
                 break;
@@ -43,7 +41,7 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
     
     tokio::spawn(async move {
         while let Some(msg) = res_rx.recv().await {
-            let _ = ws_res.lock().await.send(Message::Text(msg)).await;
+            ws_res.lock().await.send(Message::Text(msg)).await.unwrap();
         }
     });
 
@@ -51,7 +49,7 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
         while let Some(result_msg) = ws_req.lock().await.recv().await {
             if let Ok(msg) = result_msg {
                 if let Ok(msg_str) = msg.to_text() {
-                    let _ = req_tx.send(msg_str.to_string()).await;
+                    req_tx.send(msg_str.to_string()).await.unwrap();
                 }
             }
         }

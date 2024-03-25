@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 pub struct RoleSet {
     pub mafia: usize,
     pub sheriff: bool,
-    pub maniac: bool,
+    pub don: bool,
     pub civilian: usize,
 }
 
@@ -12,9 +12,15 @@ impl RoleSet {
         Self {
             mafia: 0,
             sheriff: false,
-            maniac: false,
+            don: true,
             civilian: 0,
         }
+    }
+
+    pub fn cnt_red(&self) -> usize {
+        let mut cnt = self.civilian;
+        if self.sheriff { cnt += 1; }
+        cnt
     }
 }
 
@@ -23,5 +29,15 @@ pub enum Role {
     Civilian,
     Mafia,
     Sheriff,
-    Maniac,
+    Don,
+}
+
+impl Role {
+    pub fn is_black(&self) -> bool {
+        match self {
+            Self::Mafia => true,
+            Self::Don => true,
+            _ => false
+        }
+    }
 }
