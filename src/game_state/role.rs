@@ -16,6 +16,12 @@ impl RoleSet {
             civilian: 0,
         }
     }
+
+    pub fn cnt_red(&self) -> usize {
+        let mut cnt = self.civilian;
+        if self.sheriff { cnt += 1; }
+        cnt
+    }
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]

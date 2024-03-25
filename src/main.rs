@@ -1,4 +1,4 @@
-use axum::{routing::get, Error, Router};
+use axum::{routing::get, Router};
 use game_state::GameState;
 use tera::Tera;
 use tower_http::services::ServeDir;
@@ -6,6 +6,8 @@ use tower_http::services::ServeDir;
 use serde::{Serialize, Deserialize};
 
 use std::{net::SocketAddr, sync::Arc};
+
+use tokio::sync::Mutex;
 
 // ------- mod -------
 mod file;
@@ -24,7 +26,7 @@ pub struct PlayerInfo {
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
-    pub game: GameState,
+    pub game: Arc<Mutex<GameState>>,
 }
 
 
@@ -35,7 +37,7 @@ async fn main() {
 
     let state = AppState {
         tera: Arc::new(tera),
-        game: GameState::new(),
+        game: Arc::new(Mutex::new(GameState::new())),
     };
 
     let app = Router::new()
