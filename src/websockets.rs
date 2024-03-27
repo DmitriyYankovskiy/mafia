@@ -25,10 +25,12 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
     let req_rx = Arc::new(Mutex::new(req_rx));
 
     while let Some(Ok(msg)) = ws.recv().await {
+        println!("|| new ws msg"); 
         if let Ok(msg_str) = msg.to_text() {
             if let Ok(player_info) = from_str::<PlayerInfo>(msg_str) {
                 if let GameState::Setup(setup) = &mut *game.lock().await {
-                    setup.add_player(Player::new(player_info.name, Sender::clone(&res_tx), req_rx)).await.unwrap();
+                    setup.add_player(Player::new(player_info.name.clone(), Sender::clone(&res_tx), req_rx)).await.unwrap();
+                    println!("|| new character with name: {}", &player_info.name);
                 }
 
                 break;

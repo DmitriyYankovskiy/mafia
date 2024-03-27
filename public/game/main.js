@@ -33,6 +33,12 @@ Main.init = function() {
     }
     Socket.init();
     Table.init();
+
+
+    let me = { name: "Akke" };
+    Socket.send(me);
+
+
     Main.gameEvents.startGame({"role": "Mafia", "number": 1})
 };
 

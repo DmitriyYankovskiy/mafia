@@ -6,15 +6,15 @@ use tokio::{
     sync::Mutex, task::JoinHandle,
 
 };
-use rand::{
-    thread_rng,
-    seq::SliceRandom,
-};
+use rand::seq::SliceRandom;
+
+extern crate rand_pcg;
 
 pub mod setup;
 pub mod game;
 pub mod role;
 
+use rand_pcg::Pcg32;
 use setup::Setup;
 use game::{
     Game,
@@ -25,18 +25,23 @@ use game::{
 #[derive(Clone)]
 pub enum GameState {
     Setup(Setup),
-    On{game: Arc<Mutex<Game>>, game_loop: Arc<Mutex<JoinHandle<()>>>},
+    On{game: Arc<Mutex<Game>>/*, game_loop: Arc<Mutex<JoinHandle<()>>>*/},
     End,
+}
+
+fn time_now() -> u128 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros()
 }
 
 impl GameState {
     pub fn new() -> Self {
+        
         GameState::Setup(Setup::new())
     }
     
-    pub async fn start(&mut self) -> Result<(), &'static str> {
+    pub async fn start(&mut self) -> Result<JoinHandle<()>, &'static str> {
         if let GameState::Setup(mut setup) = self.clone() {
-            let mut rng = thread_rng();
+            let mut rng = Pcg32::new(time_now() as u64, time_now() as u64);
 
             let players: HashMap<String, Arc<Mutex<Player>>> = setup.players.clone().into_iter().map(|(k, v)| (k, Arc::new(Mutex::new(v)))).collect();
             let mut roles = setup.get_roles().await;
@@ -56,9 +61,9 @@ impl GameState {
                 game.lock().await.get_character(Num::from_idx(i)).lock().await.set_game(Arc::downgrade(&Arc::clone(&game)));
             }   
             let task = tokio::spawn(Game::run(Arc::clone(&game)));
-            *self = GameState::On{game, game_loop: Arc::new(Mutex::new(task))};
-            
-            Ok(())
+            println!("<game started>");
+            *self = GameState::On{game};
+            Ok(task)
         } else {
             Err("you are trying to start the game but it has already started")
         }

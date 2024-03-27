@@ -26,9 +26,9 @@ impl Setup {
 
     pub async fn get_roles(&mut self) -> Vec<Role> {
         let mut role_set = String::new();
-        File::open("../rules/roles.json").unwrap().read_to_string(&mut role_set).unwrap();
+        File::open("./rules/roles.json").unwrap().read_to_string(&mut role_set).unwrap();
         let role_set = serde_json::from_str::<HashMap<usize, RoleSet>>(&role_set).unwrap();
-        let role_set = role_set[&(self.players.len() - 1)];
+        let role_set = role_set[&self.players.len()];
 
         let mut roles = Vec::<Role>::new();
         for _ in 0..role_set.mafia {
