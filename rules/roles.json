@@ -2,7 +2,14 @@
     "7": {
         "mafia": 2,
         "sheriff": true,
-        "maniac": false,
+        "don": false,
         "civilian": 4
+    },
+
+    "10": {
+        "mafia": 2,
+        "don": true,
+        "sheriff": true,
+        "civilian": 6
     }
 }

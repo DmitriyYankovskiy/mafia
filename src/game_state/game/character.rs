@@ -45,4 +45,12 @@ impl Character {
     pub fn get_game(&self) -> Arc<Mutex<Game>> { 
         self.game.upgrade().unwrap()
     }
+
+    pub fn get_player(&self) -> Arc<Mutex<Player>> {
+        self.player.upgrade().unwrap()
+    }
+
+    pub fn die(&mut self) {
+        self.alive = false;
+    }
 }

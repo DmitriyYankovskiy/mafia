@@ -1,14 +1,11 @@
-use std::sync::Arc;
-
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Path, State}, 
-    response::{Html, IntoResponse, Response}, 
-    http::StatusCode
+    extract::{ws::WebSocketUpgrade, State}, 
+    response::{Html, IntoResponse}, 
 };
 
 use serde_json::json;
 
-use crate::{file, AppState, websockets};
+use crate::{AppState, websockets};
 
 pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
     let tera = state.tera;

@@ -1,12 +1,10 @@
-use std::{collections::{HashMap, HashSet}, sync::{Arc, Weak}};
+use std::{collections::{HashMap, HashSet}, sync::Arc};
 
 use tokio::{
-    fs::File, 
-    io::AsyncReadExt, 
-    sync::Mutex
+    task::JoinHandle,
+    sync::Mutex,
+    time,
 };
-
-use rand::{thread_rng, seq::SliceRandom};
 
 use super::role::{Role, RoleSet};
 
@@ -15,13 +13,43 @@ pub mod character;
 pub mod player;
 
 use character::{Character, Num};
-use game_loop::{GameLoop, Stage, Candidate};
+use game_loop::Candidate;
 use player::Player;
+
+
+#[derive(Debug)]
+enum MafiaTarget {
+    Nobody,
+    Somebody(Num),
+    Miss,
+}
+
+impl MafiaTarget {
+    pub fn new() -> MafiaTarget {
+        return Self::Nobody;
+    }
+
+    pub fn add(&mut self, target: Num) {
+        match self {
+            Self::Nobody => {
+                *self = Self::Somebody(target);
+            },
+            Self::Somebody(num) => {
+                if num.to_idx() != target.to_idx() {
+                    *self = Self::Miss;
+                }
+            },
+            Self::Miss => {}
+        }
+    }
+}
+
+
 
 pub struct Game {
     characters: Vec<Arc<Mutex<Character>>>,
     players: HashMap<String, Arc<Mutex<Player>>>,
-    game_loop: GameLoop,
+    round: usize,
 }
 
 impl Game {
@@ -29,7 +57,7 @@ impl Game {
         Self {
             characters,
             players,
-            game_loop: GameLoop::new(),
+            round: 1,
         }
     }
 
@@ -38,7 +66,7 @@ impl Game {
         for character in self.characters.iter() {
             match (*character.lock().await).role {
                 Role::Mafia => roles.mafia += 1,
-                Role::Maniac => roles.maniac = true,
+                Role::Don => roles.don = true,
                 Role::Sheriff => roles.sheriff = true,
                 Role::Civilian => roles.civilian += 1,
             };
@@ -46,171 +74,177 @@ impl Game {
         roles
     }
 
-    pub async fn next(&mut self) {
-        let stage = match &*self.game_loop.stage.lock().await {
-            Stage::Night {
-                mafia_targets,
-                maniac_target,
-                checked,
-            } => {
-                let mut dies: Vec<Num> = Vec::new();
-                if mafia_targets.len() == self.remain().await.mafia {
-                    let mut mafia_target = Option::<Num>::None;
-                    for (_, target) in mafia_targets.into_iter() {
-                        if (mafia_target.is_none())  {
-                            mafia_target = Some(*target);
-                        }
+    pub async fn run(me: Arc<Mutex<Self>>) {
+        me.lock().await.game_loop().await;
+    }
 
-                        if (mafia_target.unwrap() != *target) {
-                            mafia_target = None;
-                            break;
+    async fn game_loop(&mut self) {
+        self.round = 0;
+        loop {
+            self.round += 1;
+            let candidates: Vec<Num> = self.discussion().await;
+            let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
+            self.sunset(dies).await;
+            let dies = self.night().await;
+            self.sunrise(dies).await;
+
+            if self.check_end().await {
+                break;
+            }
+        }
+    }
+
+    async fn check_end(&self) -> bool {
+        let remain = self.remain().await;
+        remain.mafia >= remain.cnt_red()
+    }
+
+    async fn discussion(&mut self) -> Vec<Num> {
+        let candidates = Arc::new(Mutex::new(Vec::<Num>::new()));
+        for i in 0..self.characters.len() {
+            let num = Num::from_idx((i + self.round - 1) % self.characters.len());
+            if !self.get_character(num).lock().await.alive {continue}
+
+            let character: Arc<Mutex<Character>> = self.get_character(num);
+            let player = character.lock().await.get_player();
+            
+            let candidates = Arc::clone(&candidates);
+            let listner = tokio::spawn(async move {
+                'recv: loop {
+                    let num = player.lock().await.recv_accuse().await;
+                    for candidate in candidates.lock().await.iter() {
+                        if *candidate == num {
+                            continue 'recv;
                         }
                     }
-                    if let Some(mafia_target) = mafia_target {
-                        dies.push(mafia_target);
-                    }
-                }                
+                    candidates.lock().await.push(num);
+                }
+            });
 
-                if let Some(maniac_target) = maniac_target {
-                    dies.push(maniac_target.1);
+            time::timeout(time::Duration::from_secs(60), listner).await.unwrap().unwrap();   
+        }
+
+        Arc::try_unwrap(candidates).unwrap().into_inner()
+    }
+
+    async fn voting(&mut self, mut candidates: Vec<Candidate>) -> Vec<Num> {
+        if candidates.is_empty() {
+            return vec![];
+        }
+        
+        let mut voted = HashSet::<Num>::new();
+        for candidate in &mut candidates {
+            let mut listners = vec![];
+            let mut cnt = 0usize;
+            for (_, player) in &self.players {
+                let num = player.lock().await.get_character().lock().await.num;
+                if voted.contains(&num) {
+                    continue;
                 }
 
-                Stage::Sunrise { idx: 0, dies, }
-            },
-            Stage::Sunrise {
-                idx,
-                dies,
-            } => {
-                Stage::Discussion {num: Num(self.game_loop.get_round()), accused: HashMap::new()}
-            }
-            Stage::Discussion {accused, .. } => {
-                Stage::Voting {
-                    candidates: accused.into_iter().map(|(&_, &target): (&Num, &Num)| Candidate::new(target, 0)).collect(),
-                    not_voted: {
-                        let mut not_voted = HashSet::new();
-                        for i in 0..(self.characters.len()) {
-                            if self.get_character(Num::from_idx(i)).lock().await.alive {
-                                not_voted.insert(Num::from_idx(i));
-                            }
-                        }
-                        not_voted
-                    },
-                    
-                    idx: 0,
-                }
-            }
-            Stage::Voting {candidates, .. } => {
-                let mut max_votes = 0;
-                let mut dies = Vec::<Num>::new();
-                for candidate in candidates {
-                    if max_votes < candidate.cnt_votes {
-                        max_votes = candidate.cnt_votes;
-                        dies = Vec::new();
-                        dies.push(candidate.num);
-                    } else if max_votes == candidate.cnt_votes {
-                        dies = Vec::new();
+                let player_clone = Arc::clone(player);
+                listners.push(tokio::spawn(async move {
+                    if player_clone.lock().await.recv_vote().await {
+                        Some(num)
+                    } else {
+                        None
                     }
+                }));
+            }
+            let listners = listners.into_iter().map(
+                    |listner| time::timeout(time::Duration::from_secs(3), listner
+                ).into_inner())
+                .collect::<Vec<JoinHandle<Option<Num>>>>();
+            for listner in listners {
+                if let Ok(Some(num)) = listner.await {
+                    voted.insert(num);
+                    cnt += 1;
                 }
-                Stage::Sunset {
-                    idx: 0,
-                    dies,
+            };
+
+            candidate.cnt_votes = cnt;
+        }
+        let max = candidates.iter().map(|cand| cand.cnt_votes).max().unwrap();
+        let mut dies = vec![];
+        for candidate in candidates {
+            if candidate.cnt_votes == max {
+                dies.push(candidate.num);
+            }
+        }
+
+        dies
+    }
+
+    async fn sunset(&mut self, dies: Vec<Num>) {
+        self.dying(&dies).await;
+    }
+
+    async fn sunrise(&mut self, dies: Vec<Num>) {
+        self.dying(&dies).await;
+        self.round += 1;
+    }
+
+    async fn night(&mut self) -> Vec<Num>{
+        let mut mafia_listners = Vec::<JoinHandle<Num>>::new();
+        let mut sheriff_listner = None;
+        let mut mafia_target = MafiaTarget::new();
+        let mut sheriff_check  = Option::<Num>::None;
+        
+        for (_, player) in &self.players {
+            let player_clone = Arc::clone(player);
+            match {player.lock().await.get_character().lock().await.role} {
+                Role::Mafia => {
+                    mafia_listners.push(tokio::spawn(async move {
+                        let num = player_clone.lock().await.recv_action().await;
+                        num
+                    }));
+                },
+                Role::Sheriff => {
+                    sheriff_listner = Some(tokio::spawn(async move {
+                        let num = player_clone.lock().await.recv_action().await;
+                        num
+                    }));
+                },
+                _ => continue,
+            }       
+        }
+        let duration = time::Duration::from_secs(10);
+        let mafia_listners = mafia_listners.into_iter().map(
+                |listner| time::timeout(duration, listner).into_inner()
+            ).collect::<Vec<JoinHandle<Num>>>();
+        if let Some(listner) = sheriff_listner {
+            if let Ok(res) = time::timeout(duration, listner).await {
+                sheriff_check = Some(res.unwrap());
+            }            
+        }
+
+        if let Some(num) = sheriff_check {
+            for character in &self.characters {
+                if character.lock().await.role == Role::Sheriff {
+                    self.get_character(num).lock().await.role.is_black();
                 }
             }
-            Stage::Sunset { .. } => {
-                Stage::Night {
-                    checked: None,
-                    mafia_targets: HashMap::new(),
-                    maniac_target: None,
-                }
-            }
+        }
+
+
+        for listner in mafia_listners {
+            mafia_target.add(listner.await.unwrap());
         };
-
-        *self.game_loop.stage.lock().await = stage;
-
-        if let Stage::Voting {..} = &mut *self.game_loop.stage.lock().await {
-            self.voting_timer();
-        }
-    }
-
-    async fn voting_timer(&self) {
-        let mut cnt = 0usize;
-        match &mut *self.game_loop.stage.lock().await {
-            Stage::Voting { candidates,.. } => {
-                cnt = candidates.len();
-            }
-            _ => {return}
-        }   
-        for i in 0usize..cnt {
-            if let Stage::Voting { idx, .. } = &mut *self.game_loop.stage.lock().await {
-                *idx = i;
-            }
-
-            tokio::time::sleep(tokio::time::Duration::from_secs(5));
-        }        
-    }
-
-    pub async fn mafia_kill(&mut self, from: Num, target: Num) -> Result<(), ()> {
-        if let Stage::Night {mafia_targets, ..} = &mut *self.game_loop.stage.lock().await {
-            mafia_targets.insert(from, target);
-            Ok(())
+        if let MafiaTarget::Somebody(num) = mafia_target {
+            vec![num]
         } else {
-            Err(())
+            Vec::new()
         }
     }
 
-    pub async fn maniac_kill(&mut self, from: Num, target: Num) -> Result<(), ()> {
-        if let Stage::Night {maniac_target, .. } = &mut *self.game_loop.stage.lock().await {
-            *maniac_target = Some((from, target));   
-            Ok(())
-        } else {
-            Err(())
+    async fn dying(&self, dies: &Vec<Num>) {
+        for die in dies {
+            self.get_character(*die).lock().await.die();
+        }
+        for _ in dies {
+            time::sleep(time::Duration::from_secs(60)).await;
         }
     }
-
-    pub async fn check(&mut self, from: Num, target: Num) -> Result<(), ()> {
-        if let Stage::Night {checked, .. } = &mut *self.game_loop.stage.lock().await {
-            *checked = Some((from, target)); 
-            Ok(())
-        } else {
-            Err(())
-        }
-    }
-    
-    pub async fn accuse(&mut self, from: Num, target: Num) -> Result<bool, ()> {
-        if let Stage::Discussion {accused, num, .. } = &mut *self.game_loop.stage.lock().await {
-            if *num == from {
-                let mut was_accused = false;
-                for (accuser, accused) in accused.iter() {
-                    if *accused == target {
-                        was_accused = true;
-                    }
-                } 
-                if was_accused {
-                    return Ok(false);
-                }
-                accused.insert(from, target);
-                Ok(true)
-            } else {
-                Err(())
-            }
-        } else {
-            Err(())
-        }
-    }
-
-    pub async fn vote(&mut self, from: Num) -> Result<bool, ()> {
-        if let Stage::Voting {idx, candidates, not_voted, .. } = &mut *self.game_loop.stage.lock().await {
-            if not_voted.contains(&from) {
-                not_voted.remove(&from);
-                candidates[*idx].cnt_votes += 1;
-                Ok(true)
-            } else {
-                Ok(false)
-            }
-        } else {
-            Err(())
-        }
-    }    
 
     pub fn get_character(&self, num: Num) -> Arc<Mutex<Character>> {
         Arc::clone(&self.characters[num.to_idx()])
