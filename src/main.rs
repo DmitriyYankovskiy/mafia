@@ -14,6 +14,7 @@ mod file;
 mod controllers;
 mod websockets;
 mod game_state;
+mod command;
 // -------------------
 
 
@@ -29,7 +30,6 @@ pub struct AppState {
     pub game: Arc<Mutex<GameState>>,
 }
 
-
 #[tokio::main]
 async fn main() {
     let mut tera = Tera::new("public/**/*.html").unwrap();
@@ -39,7 +39,8 @@ async fn main() {
         tera: Arc::new(tera),
         game: Arc::new(Mutex::new(GameState::new())),
     };
-
+    let commander = command::Listner::new(Arc::clone(&state.game));
+    tokio::spawn(commander.listen());
     let app = Router::new()
         .route("/", get(controllers::index))
         .route("/ws", get(controllers::ws))

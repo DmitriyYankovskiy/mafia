@@ -1,6 +1,6 @@
 import Main from "./main.js";
 
-let ws = new WebSocket(`ws://${location.hostname}:9998`);
+let ws = new WebSocket(`ws://${location.hostname}:9999/ws`);
 
 function onMessage(event) {
     if (Main.phase == "starting") {
@@ -10,10 +10,14 @@ function onMessage(event) {
 let Socket = {};
 Socket.init = function () {
     ws.onmessage = onMessage;
+    ws.onopen = function () {
+        let me = { name: "Akke" };
+        Socket.send(me);
+    }
 }
 
 Socket.send = function(obj) {
-    console.log(JSON.stringify(obj));
+    ws.send(JSON.stringify(obj));
 }
 
 

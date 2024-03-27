@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, HashSet}, sync::Arc};
+use std::{collections::{HashMap, HashSet}, sync::Arc, time::Duration};
 
 use tokio::{
     task::JoinHandle,
@@ -75,12 +75,15 @@ impl Game {
     }
 
     pub async fn run(me: Arc<Mutex<Self>>) {
+        println!("game run");
         me.lock().await.game_loop().await;
     }
 
     async fn game_loop(&mut self) {
         self.round = 0;
         loop {
+            println!(" --- round: {} ---", self.round);        
+
             self.round += 1;
             let candidates: Vec<Num> = self.discussion().await;
             let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
@@ -128,6 +131,7 @@ impl Game {
     }
 
     async fn voting(&mut self, mut candidates: Vec<Candidate>) -> Vec<Num> {
+        println!("<voting>");
         if candidates.is_empty() {
             return vec![];
         }
@@ -176,15 +180,19 @@ impl Game {
     }
 
     async fn sunset(&mut self, dies: Vec<Num>) {
+        println!("<sunset>");
         self.dying(&dies).await;
     }
 
     async fn sunrise(&mut self, dies: Vec<Num>) {
+        println!("<sunrise>");        
         self.dying(&dies).await;
         self.round += 1;
     }
 
     async fn night(&mut self) -> Vec<Num>{
+        println!("<night>");        
+        
         let mut mafia_listners = Vec::<JoinHandle<Num>>::new();
         let mut sheriff_listner = None;
         let mut mafia_target = MafiaTarget::new();

@@ -1,4 +1,10 @@
 {
+    "1": {
+        "mafia": 0,
+        "sheriff": false,
+        "don": false,
+        "civilian": 1
+    },
     "7": {
         "mafia": 2,
         "sheriff": true,
