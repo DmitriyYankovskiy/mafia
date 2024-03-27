@@ -1,14 +1,14 @@
 import Main from "./main.js";
 
 let players;
-let table_element;
+let tableElement;
 
 function getWidth(element) {
     return window.getComputedStyle(element).width.split("p")[0];
 }
 
 function playerClickListener(e) {
-    if (Main.phase.able_to_selecting == 0) return;
+    if (Main.phase.ableToSelecting == 0 || Main.me.player.state == "dead") return;
     let number = e.target.id.split("-");
     number = number[number.length - 1];
     Main.selectedPlayers = [];
@@ -26,54 +26,55 @@ function playerClickListener(e) {
 }
 let Table = {};
 
-Table.background_element = document.getElementById("background");
-Table.role_span_element = document.getElementById("role-span");
-Table.show_my_role_element = document.getElementById("show-my-role-button");
-Table.ok_span_element = document.getElementById("ok-span");
-Table.ok_element = document.getElementById("ok-button");
+Table.backgroundElement = document.getElementById("background");
+Table.roleSpanElement = document.getElementById("role-span");
+Table.showMyRoleElement = document.getElementById("show-my-role-button");
+Table.okSpanElement = document.getElementById("ok-span");
+Table.okElement = document.getElementById("ok-button");
 
 Table.redrawTable = function() {
     if (players.length == 0) {
         return;
     }
 
-    Table.background_element.classList.remove("background-day");
-    Table.background_element.classList.remove("background-night");
-    if (Main.day_or_night == "day") {
-        Table.background_element.classList.add("background-day");
+    Table.backgroundElement.classList.remove("background-day");
+    Table.backgroundElement.classList.remove("background-night");
+    if (Main.dayOrNight == "day") {
+        Table.backgroundElement.classList.add("background-day");
     } else {
-        Table.background_element.classList.add("background-night");
+        Table.backgroundElement.classList.add("background-night");
     }
 
 
     let alivePlayers = [];
     for (let i in players) {
-        if (players[i].state == "alive") {
+        if (players[i].state != "dead") {
             alivePlayers.push(players[i]);
+        } else {
+            players[i].element.style.display = "none";
+            players[i].element.parentElement.style.display = "none";
         }
-        players[i].element.display = "none";
     }
 
-    if (!Main.phase.able_to_selecting) {
-        Table.ok_element.classList.add("invisible");
+    if (!Main.phase.ableToSelecting || Main.me.player.state == "dead") {
+        Table.okElement.classList.add("invisible");
     } else {
         if (Main.phase.name == "saying") {
-            Table.ok_span_element.innerHTML = "Put it up";
+            Table.okSpanElement.innerHTML = "Put it up";
         } else if (Main.phase.name == "voting") {
-            console.log(Main.phase);
-            Table.ok_span_element.innerHTML = "Vote";
+            Table.okSpanElement.innerHTML = "Vote";
         } else if (Main.phase.name = "night") {
-            if (Main.me.role == "Mafia") Table.ok_span_element.innerHTML = "Shoot";
-            if (Main.me.role == "Maniac") Table.ok_span_element.innerHTML = "Kill";
-            if (Main.me.role == "Sheriff") Table.ok_span_element.innerHTML = "Check";
-            if (Main.me.role == "Doctor") Table.ok_span_element.innerHTML = "Heal";
+            if (Main.me.role == "Mafia") Table.okSpanElement.innerHTML = "Shoot";
+            if (Main.me.role == "Maniac") Table.okSpanElement.innerHTML = "Kill";
+            if (Main.me.role == "Sheriff") Table.okSpshowMyRoleElementanElement.innerHTML = "Check";
+            if (Main.me.role == "Doctor") Table.okSpanElement.innerHTML = "Heal";
         }
-        Table.ok_element.classList.remove("invisible");
+        Table.okElement.classList.remove("invisible");
     }
 
 
     let aliveCount = alivePlayers.length;
-    let tableSize = getWidth(table_element);
+    let tableSize = getWidth(tableElement);
     let deltaAngle = Math.PI * 2 / aliveCount;
     for (let i = 0; i < aliveCount; i++) {
         let playerSize = getWidth(alivePlayers[i].element.parentElement);
@@ -82,16 +83,26 @@ Table.redrawTable = function() {
         if (alivePlayers[i].type == "me") {
             alivePlayers[i].element.classList.add("me-player");
         }
+        if (alivePlayers[i].type == "targetNow") {
+            alivePlayers[i].element.classList.add("target-now-player");
+        } else {
+            alivePlayers[i].element.classList.remove("target-now-player");
+        }
+        if (alivePlayers[i].type == "target") {
+            alivePlayers[i].element.classList.add("target-player");
+        } else {
+            alivePlayers[i].element.classList.remove("target-player");
+        }
     }
 }
 
 Table.init = function () {
     players = Main.players;
-    table_element = Main.table_element;
+    tableElement = Main.tableElement;
     for (let i in players) {
         players[i].element.addEventListener("click", playerClickListener);
     }
-    Table.ok_element.addEventListener("click", function (e) {
+    Table.okElement.addEventListener("click", function (e) {
         Main.playersEvents.okPress();
         for (let i in players) {
             players[i].element.classList.remove("selected-player");
@@ -100,24 +111,24 @@ Table.init = function () {
         }
         Table.redrawTable();
     });
-    Table.show_my_role_element.addEventListener("mousedown", function (e) {
+    Table.showMyRoleElement.addEventListener("mousedown", function (e) {
         Table.showRole();
     });
-    Table.show_my_role_element.addEventListener("mouseup", function (e) {
+    Table.showMyRoleElement.addEventListener("mouseup", function (e) {
         Table.hideRole();
     });
-    Table.show_my_role_element.addEventListener("mouseout", function (e) {
+    Table.showMyRoleElement.addEventListener("mouseout", function (e) {
         Table.hideRole();
     });
     this.redrawTable();
 }
 
 Table.showRole = function () {
-    Table.role_span_element.classList.remove("hidden-span");
+    Table.roleSpanElement.classList.remove("hidden-span");
 }
 
 Table.hideRole = function () {
-    Table.role_span_element.classList.add("hidden-span");
+    Table.roleSpanElement.classList.add("hidden-span");
 }
 
 Table.gameEvents = {};

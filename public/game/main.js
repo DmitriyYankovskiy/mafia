@@ -1,7 +1,7 @@
 import Table from "./table.js";
 import Socket from "./websocket.js";
 
-let table_element = document.getElementById("round-table");
+let tableElement = document.getElementById("round-table");
 
 function Player(number) {
     this.number = number;
@@ -11,21 +11,20 @@ function Player(number) {
 }
 let Main = {};
 Main.players = {};
-Main.day_or_night = "night";
+Main.dayOrNight = "night";
 Main.phase = {
     name: "night",
-    who_saying: 1,
-    able_to_selecting: true,
+    ableToSelecting: true,
 }
-Main.table_element = table_element;
+Main.tableElement = tableElement;
 Main.selectedPlayers = [];
 Main.me = {
     role: "Mafia",
-    number: 1
+    player: {},
 }
 Main.init = function() {
     let j = 1;
-    for (let i of table_element.childNodes) {
+    for (let i of tableElement.childNodes) {
         if (i.id == `player-container-${j}`) {
             this.players[j] = new Player(j);
             j++;
@@ -33,91 +32,133 @@ Main.init = function() {
     }
     Socket.init();
     Table.init();
-    Main.gameEvents.startGame({"role": "Mafia", "number": 1})
+    Socket.startGame().then(Main.gameEvents.startGame);
 };
 
 Main.gameEvents = {};
 
 Main.gameEvents.startGame = function (data) {
     Main.me.role = data.role;
-    Main.me.number = data.number;
-    Main.players[Main.me.number].type = "me";
+    Main.me.player = Main.players[data.number];
+    Main.players[Main.me.player.number].type = "me";
     Table.redrawTable();
     Table.showRole();
     setTimeout(Table.hideRole, 3000);
 };
 
 Main.gameEvents.startNight = function () {
-    Main.day_or_night = "night";
+    Main.dayOrNight = "night";
     Main.phase = {
         name: "night",
-        able_to_selecting: (Main.me.role == "Cityzen" ? false : true),
+        ableToSelecting: (Main.me.role == "Cityzen" ? false : true),
     }
     Table.redrawTable();
 };
 
 Main.gameEvents.startSunrise = function () {
-    Main.day_or_night = "day";
+    Main.dayOrNight = "day";
     Main.phase = {
         name: "sunrise",
-        able_to_selecting: false,
+        ableToSelecting: false,
     }
     Table.redrawTable();
 };
 
 Main.gameEvents.startSaying = function () {
-    Main.day_or_night = "day";
+    Main.dayOrNight = "day";
     Main.phase = {
         name: "saying",
-        able_to_selecting: false,
+        targets: [],
+        whoSaying: {},
+        ableToSelecting: false,
     }
     Table.redrawTable();
 };
 
-Main.gameEvents.startVoting = function () {
-    Main.day_or_night = "day";
+Main.gameEvents.saying = function (say) {
+    Main.phase.whoSaying = say;
+    if (say == Main.me.player) {
+        Main.phase.ableToSelecting = true;
+    } else {
+        Main.phase.ableToSelecting = false;
+    }
+    Table.redrawTable();
+};
+
+Main.gameEvents.addTarget = function (player) {
+    Main.phase.targets.push(player);
+    Table.redrawTable();
+};
+
+Main.gameEvents.startVoting = function (targets) {
+    Main.dayOrNight = "day";
     Main.phase = {
         name: "voting",
+        targets: targets,
         target: 0,
-        able_to_selecting: true,
+        ableToSelecting: true,
+    }
+    for (let i in Main.phase.targets) {
+        if (Main.phase.targets[i].type != "dead") Main.phase.targets[i].type = "target";
     }
 };
 
 Main.gameEvents.votingFor = function (number) {
-    Main.phase.target = Main.players[number];
+    for (let i in Main.phase.targets) {
+        if (Main.phase.targets[i].type != "dead") Main.phase.targets[i].type = "target";
+    }
+    Main.phase.target = Main.phase.targets[number];
+    Main.phase.target.type = "targetNow";
     Table.redrawTable();
-}
+};
 
 Main.gameEvents.startSunset = function () {
-    Main.day_or_night = "day";
+    for (let i in Main.phase.targets) {
+        if (Main.phase.targets[i].type != "dead") Main.phase.targets[i].type = "alive";
+    }
+    Main.dayOrNight = "day";
     Main.phase = {
         name: "sunset",
-        target: 0,
-        able_to_selecting: false,
+        ableToSelecting: false,
     }
     Table.redrawTable();
 };
+
+Main.gameEvents.killPlayer = function (player) {
+    player.state = "dead";
+} 
 
 
 Main.playersEvents = {};
 
 Main.playersEvents.okPress = function() {
-    if (Main.phase.able_to_selecting) {
-        if (Main.day_or_night == "day") {
+    if (Main.phase.ableToSelecting && Main.me.player.state != "dead") {
+        if (Main.dayOrNight == "day") {
             if (Main.phase.name == "saying") {
-                if (Main.phase.who_saying == Main.me.number) {
+                Socket.pickPlayers(Main.selectedPlayers);
+                Main.phase.ableToSelecting = false;
+                /*? Main.selectedPlayers.push(Main.me.player);*/
+                /*? Main.selectedPlayers.push(Main.players[3]);*/
+                /*?*/ Main.gameEvents.startVoting(Main.selectedPlayers);
+                /*?*/ Main.gameEvents.votingFor(0);
+            } else if (Main.phase.name == "voting") {
+                if (Main.selectedPlayers.length != 0 && Main.phase.target == Main.selectedPlayers[0]) {
                     Socket.pickPlayers(Main.selectedPlayers);
+                    Main.phase.ableToSelecting = false;
+
+                    /*?*/ Main.gameEvents.startSunset();
+                    /*?*/ setTimeout(Main.gameEvents.startNight, 1000);
                 }
-                Main.phase.able_to_selecting = false;
             }
-            Main.gameEvents.startNight();
-        } else if (Main.day_or_night == "night") {
+        } else if (Main.dayOrNight == "night") {
             if (Main.me.role != "Cityzen") {
                 Socket.pickPlayers(Main.selectedPlayers);
-                Main.phase.able_to_selecting = false;
+                Main.phase.ableToSelecting = false;
+
+                /*?*/ Main.gameEvents.startSaying(Main.me.player);
+                /*?*/ Main.gameEvents.saying(Main.me.player);
+                /*?*/ if (Main.selectedPlayers.length != 0) Main.gameEvents.killPlayer(Main.selectedPlayers[0])
             }
-            Main.gameEvents.startVoting();
-            Main.gameEvents.votingFor(1);
         }
     }
     Main.selectedPlayers = [];

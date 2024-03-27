@@ -14,7 +14,7 @@ pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
     let tera = state.tera;
 
     let mut context = tera::Context::from_value(json!({
-        "title": "Aboba",
+        "title": "Mafia | Game #001",
         "players" : [
             {"number": 1},
             {"number": 2},

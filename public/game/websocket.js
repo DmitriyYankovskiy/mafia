@@ -29,4 +29,18 @@ Socket.pickPlayers = function(selectedPlayers) {
     }
 }
 
+Socket.startGame = function() {
+    return new Promise(function(resolve, reject) {
+        // ws.send();
+        ws.onmessage = function() {
+            resolve({"role": "Mafia", "number": 6});
+        };
+        resolve({"role": "Mafia", "number": 7});
+    });
+};
+
+Socket.nextPhase = function(data) {
+
+};
+
 export default Socket;

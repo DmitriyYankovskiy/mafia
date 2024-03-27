@@ -47,6 +47,7 @@
     justify-content: center;
     aspect-ratio: 1/1;
     height: 160px;
+    transition: 0.3s;
 }
 
 .player {
@@ -92,8 +93,17 @@
     box-shadow: 0px 0px 35px #00000025;
 }
 
+.target-player {
+    background: radial-gradient(#5cb5ff, #1c91ff);
+}
+
+.target-now-player {
+    background: radial-gradient(#1e67b9, #0025ca);
+    color: white;
+}
+
 .show-my-role-button {
-    background-color: #adadad;
+    background-color: white;
     width: 70px;
     height: 70px;
     border-radius: 20px;
