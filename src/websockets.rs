@@ -32,7 +32,6 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
                     setup.add_player(Player::new(player_info.name.clone(), Sender::clone(&res_tx), req_rx)).await.unwrap();
                     println!("|| new character with name: {}", &player_info.name);
                 }
-
                 break;
             }
         }

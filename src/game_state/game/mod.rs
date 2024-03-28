@@ -124,9 +124,10 @@ impl Game {
                 }
             });
 
-            time::timeout(time::Duration::from_secs(60), listner).await.unwrap().unwrap();   
+            time::sleep(time::Duration::from_secs(5)).await;
+            listner.abort();
+            let _ = listner.await;
         }
-
         Arc::try_unwrap(candidates).unwrap().into_inner()
     }
 
@@ -155,10 +156,12 @@ impl Game {
                     }
                 }));
             }
-            let listners = listners.into_iter().map(
-                    |listner| time::timeout(time::Duration::from_secs(3), listner
-                ).into_inner())
-                .collect::<Vec<JoinHandle<Option<Num>>>>();
+
+            time::sleep(time::Duration::from_secs(3));
+
+            for listner in &listners {
+                listner.abort();
+            };
             for listner in listners {
                 if let Ok(Some(num)) = listner.await {
                     voted.insert(num);
@@ -187,7 +190,6 @@ impl Game {
     async fn sunrise(&mut self, dies: Vec<Num>) {
         println!("<sunrise>");        
         self.dying(&dies).await;
-        self.round += 1;
     }
 
     async fn night(&mut self) -> Vec<Num>{
@@ -216,13 +218,14 @@ impl Game {
                 _ => continue,
             }       
         }
-        let duration = time::Duration::from_secs(10);
-        let mafia_listners = mafia_listners.into_iter().map(
-                |listner| time::timeout(duration, listner).into_inner()
-            ).collect::<Vec<JoinHandle<Num>>>();
-        if let Some(listner) = sheriff_listner {
-            if let Ok(res) = time::timeout(duration, listner).await {
-                sheriff_check = Some(res.unwrap());
+        time::sleep(time::Duration::from_secs(10));
+        for mafia_listner in &mafia_listners {
+            mafia_listner.abort();
+        }
+        if let Some(listner) = &mut sheriff_listner {
+            listner.abort();
+            if let Ok(res) = listner.await {
+                sheriff_check = Some(res);
             }            
         }
 
@@ -236,7 +239,9 @@ impl Game {
 
 
         for listner in mafia_listners {
-            mafia_target.add(listner.await.unwrap());
+            if let Ok(target) = listner.await {
+                mafia_target.add(target);
+            }
         };
         if let MafiaTarget::Somebody(num) = mafia_target {
             vec![num]

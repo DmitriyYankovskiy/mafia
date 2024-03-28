@@ -32,7 +32,7 @@ Main.init = function() {
     }
     Socket.init();
     Table.init();
-    Socket.startGame().then(Main.gameEvents.startGame);
+    Socket.onOpen(Socket.startGame().then(Main.gameEvents.startGame));
 };
 
 Main.gameEvents = {};

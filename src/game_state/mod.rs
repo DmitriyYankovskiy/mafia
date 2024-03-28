@@ -22,6 +22,8 @@ use game::{
     character::{Character, Num},
 };
 
+use crate::game_state::game::character;
+
 #[derive(Clone)]
 pub enum GameState {
     Setup(Setup),
@@ -54,8 +56,15 @@ impl GameState {
             for i in 0..(players_vec.len()) {
                 characters.push(Character::new(Num::from_idx(i), Arc::downgrade(&players_vec[i]), roles[i], Weak::new()));
             }
+            
+            let mut ind = 0usize;
 
-            let game = Arc::new(Mutex::new(Game::new(characters.into_iter().map(Mutex::new).map(Arc::new).collect(), players)));
+            let characters: Vec<Arc<Mutex<Character>>> = characters.into_iter().map(Mutex::new).map(Arc::new).collect();
+            for i in 0..(players_vec.len()) {
+                players_vec[i].lock().await.character = Arc::downgrade(&characters[i])
+            }
+
+            let game = Arc::new(Mutex::new(Game::new(characters, players)));
 
             for i in 0..(players_vec.len()) {
                 game.lock().await.get_character(Num::from_idx(i)).lock().await.set_game(Arc::downgrade(&Arc::clone(&game)));
