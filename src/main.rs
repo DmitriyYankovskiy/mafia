@@ -1,5 +1,5 @@
 use axum::{routing::get, Router};
-use game_state::GameState;
+use lobby::{Lobby, State};
 use tera::Tera;
 use tower_http::services::ServeDir;
 
@@ -13,8 +13,8 @@ use tokio::sync::Mutex;
 mod file;
 mod controllers;
 mod websockets;
-mod game_state;
-mod command;
+mod lobby;
+mod session;
 // -------------------
 
 
@@ -27,7 +27,7 @@ pub struct PlayerInfo {
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
-    pub game: Arc<Mutex<GameState>>,
+    pub lobby: Arc<Lobby>,
 }
 
 #[tokio::main]
@@ -37,10 +37,10 @@ async fn main() {
 
     let state = AppState {
         tera: Arc::new(tera),
-        game: Arc::new(Mutex::new(GameState::new())),
+        lobby: Arc::new(Lobby::new()),
     };
-    let commander = command::Listner::new(Arc::clone(&state.game));
-    tokio::spawn(commander.listen());
+    let session = session::Listner::new(Arc::clone(&state.lobby));
+    tokio::spawn(session.start());
     let app = Router::new()
         .route("/", get(controllers::index))
         .route("/ws", get(controllers::ws))

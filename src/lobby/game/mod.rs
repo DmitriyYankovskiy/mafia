@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, HashSet}, sync::Arc, time::Duration};
+use std::{collections::{HashMap, HashSet}, sync::Arc, fs::File, io::Read};
 
 use tokio::{
     task::JoinHandle,
@@ -6,16 +6,41 @@ use tokio::{
     time,
 };
 
+use serde::Deserialize;
+
 use super::role::{Role, RoleSet};
 
 pub mod game_loop;
 pub mod character;
-pub mod player;
 
 use character::{Character, Num};
 use game_loop::Candidate;
-use player::Player;
 
+#[derive(Deserialize)]
+struct TimeDelays {
+    discussion: u64,
+    voting: u64,
+    night: u64,
+    last_words: u64,
+}
+
+impl TimeDelays {
+    pub fn discussion(&self) -> time::Duration {
+        time::Duration::from_secs(self.discussion)
+    }
+
+    pub fn voting(&self) -> time::Duration {
+        time::Duration::from_secs(self.voting)
+    }
+
+    pub fn night(&self) -> time::Duration {
+        time::Duration::from_secs(self.night)
+    } 
+
+    pub fn last_words(&self) -> time::Duration {
+        time::Duration::from_secs(self.last_words)
+    } 
+}
 
 #[derive(Debug)]
 enum MafiaTarget {
@@ -47,24 +72,27 @@ impl MafiaTarget {
 
 
 pub struct Game {
-    characters: Vec<Arc<Mutex<Character>>>,
-    players: HashMap<String, Arc<Mutex<Player>>>,
-    round: usize,
+    characters: Vec<Arc<Character>>,
+    time_rules: TimeDelays,
+    round: Mutex<usize>,
 }
 
 impl Game {
-    pub fn new(characters: Vec<Arc<Mutex<Character>>>, players: HashMap<String, Arc<Mutex<Player>>>) -> Self {
+    pub fn new(characters: Vec<Arc<Character>>) -> Self {
+        let mut time_rules = String::new();
+        File::open("./rules/times.json").unwrap().read_to_string(&mut time_rules).unwrap();
+        let time_rules = serde_json::from_str::<TimeDelays>(&time_rules).unwrap();
         Self {
+            time_rules,
             characters,
-            players,
-            round: 1,
+            round: Mutex::new(1),
         }
     }
 
     pub async fn remain(&self) -> RoleSet {
         let mut roles = RoleSet::new();
         for character in self.characters.iter() {
-            match (*character.lock().await).role {
+            match character.info.lock().await.role {
                 Role::Mafia => roles.mafia += 1,
                 Role::Don => roles.don = true,
                 Role::Sheriff => roles.sheriff = true,
@@ -74,17 +102,18 @@ impl Game {
         roles
     }
 
-    pub async fn run(me: Arc<Mutex<Self>>) {
+    pub async fn run(me: Arc<Self>) {
         println!("game run");
-        me.lock().await.game_loop().await;
+        me.game_loop().await;
+
     }
 
-    async fn game_loop(&mut self) {
-        self.round = 0;
+    async fn game_loop(&self) {
+        *self.round.lock().await = 0;
         loop {
-            println!(" --- round: {} ---", self.round);        
+            println!(" --- round: {} ---", self.round.lock().await);        
 
-            self.round += 1;
+            *self.round.lock().await += 1;
             let candidates: Vec<Num> = self.discussion().await;
             let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
             self.sunset(dies).await;
@@ -102,19 +131,22 @@ impl Game {
         remain.mafia >= remain.cnt_red()
     }
 
-    async fn discussion(&mut self) -> Vec<Num> {
+    async fn discussion(&self) -> Vec<Num> {
+        println!("<discussion>");
         let candidates = Arc::new(Mutex::new(Vec::<Num>::new()));
         for i in 0..self.characters.len() {
-            let num = Num::from_idx((i + self.round - 1) % self.characters.len());
-            if !self.get_character(num).lock().await.alive {continue}
+            let num = Num::from_idx((i + *self.round.lock().await - 1) % self.characters.len());
+            if !self.get_character(num).info.lock().await.alive {continue}
 
-            let character: Arc<Mutex<Character>> = self.get_character(num);
-            let player = character.lock().await.get_player();
+            println!("  player number {} saying:", num.to_idx() + 1);
+
+            let character: Arc<Character> = self.get_character(num);
+            let player = character.get_player();
             
             let candidates = Arc::clone(&candidates);
             let listner = tokio::spawn(async move {
                 'recv: loop {
-                    let num = player.lock().await.recv_accuse().await;
+                    let num = player.recv_accuse().await;
                     for candidate in candidates.lock().await.iter() {
                         if *candidate == num {
                             continue 'recv;
@@ -124,14 +156,14 @@ impl Game {
                 }
             });
 
-            time::sleep(time::Duration::from_secs(5)).await;
+            time::sleep(self.time_rules.discussion()).await;
             listner.abort();
             let _ = listner.await;
         }
         Arc::try_unwrap(candidates).unwrap().into_inner()
     }
 
-    async fn voting(&mut self, mut candidates: Vec<Candidate>) -> Vec<Num> {
+    async fn voting(&self, mut candidates: Vec<Candidate>) -> Vec<Num> {
         println!("<voting>");
         if candidates.is_empty() {
             return vec![];
@@ -141,15 +173,14 @@ impl Game {
         for candidate in &mut candidates {
             let mut listners = vec![];
             let mut cnt = 0usize;
-            for (_, player) in &self.players {
-                let num = player.lock().await.get_character().lock().await.num;
+            for character in &self.characters {
+                let num = character.info.lock().await.num;
                 if voted.contains(&num) {
                     continue;
                 }
-
-                let player_clone = Arc::clone(player);
+                let player = character.get_player();
                 listners.push(tokio::spawn(async move {
-                    if player_clone.lock().await.recv_vote().await {
+                    if player.recv_vote().await {
                         Some(num)
                     } else {
                         None
@@ -157,7 +188,7 @@ impl Game {
                 }));
             }
 
-            time::sleep(time::Duration::from_secs(3));
+            time::sleep(self.time_rules.voting()).await;
 
             for listner in &listners {
                 listner.abort();
@@ -182,17 +213,17 @@ impl Game {
         dies
     }
 
-    async fn sunset(&mut self, dies: Vec<Num>) {
+    async fn sunset(&self, dies: Vec<Num>) {
         println!("<sunset>");
         self.dying(&dies).await;
     }
 
-    async fn sunrise(&mut self, dies: Vec<Num>) {
+    async fn sunrise(&self, dies: Vec<Num>) {
         println!("<sunrise>");        
         self.dying(&dies).await;
     }
 
-    async fn night(&mut self) -> Vec<Num>{
+    async fn night(&self) -> Vec<Num>{
         println!("<night>");        
         
         let mut mafia_listners = Vec::<JoinHandle<Num>>::new();
@@ -200,25 +231,25 @@ impl Game {
         let mut mafia_target = MafiaTarget::new();
         let mut sheriff_check  = Option::<Num>::None;
         
-        for (_, player) in &self.players {
-            let player_clone = Arc::clone(player);
-            match {player.lock().await.get_character().lock().await.role} {
+        for character in &self.characters {
+            let player = character.get_player();
+            match {player.get_character().await.info.lock().await.role} {
                 Role::Mafia => {
                     mafia_listners.push(tokio::spawn(async move {
-                        let num = player_clone.lock().await.recv_action().await;
+                        let num = player.recv_action().await;
                         num
                     }));
                 },
                 Role::Sheriff => {
                     sheriff_listner = Some(tokio::spawn(async move {
-                        let num = player_clone.lock().await.recv_action().await;
+                        let num = player.recv_action().await;
                         num
                     }));
                 },
                 _ => continue,
             }       
         }
-        time::sleep(time::Duration::from_secs(10));
+        time::sleep(self.time_rules.night()).await;
         for mafia_listner in &mafia_listners {
             mafia_listner.abort();
         }
@@ -231,8 +262,8 @@ impl Game {
 
         if let Some(num) = sheriff_check {
             for character in &self.characters {
-                if character.lock().await.role == Role::Sheriff {
-                    self.get_character(num).lock().await.role.is_black();
+                if character.info.lock().await.role == Role::Sheriff {
+                    self.get_character(num).info.lock().await.role.is_black();
                 }
             }
         }
@@ -252,14 +283,14 @@ impl Game {
 
     async fn dying(&self, dies: &Vec<Num>) {
         for die in dies {
-            self.get_character(*die).lock().await.die();
+            self.get_character(*die).die().await;
         }
         for _ in dies {
-            time::sleep(time::Duration::from_secs(60)).await;
+            time::sleep(self.time_rules.last_words()).await;
         }
     }
 
-    pub fn get_character(&self, num: Num) -> Arc<Mutex<Character>> {
+    pub fn get_character(&self, num: Num) -> Arc<Character> {
         Arc::clone(&self.characters[num.to_idx()])
     }
 }
