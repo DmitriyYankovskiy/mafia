@@ -38,7 +38,7 @@ Socket.startGame = function() {
     return new Promise(function(resolve, reject) {
         ws.onopen = function() {
             console.log("pp");
-            ws.send({name: "Aboba228"});
+            ws.send({name: (prompt("name:", "Player") || "Player")});
             ws.onmessage = function() {
                 resolve({"role": "Mafia", "number": 6});
             };
