@@ -7,10 +7,7 @@ use serde::{Serialize, Deserialize};
 
 use std::{net::SocketAddr, sync::Arc};
 
-use tokio::sync::Mutex;
-
 // ------- mod -------
-mod file;
 mod controllers;
 mod websockets;
 mod lobby;
@@ -39,8 +36,12 @@ async fn main() {
         tera: Arc::new(tera),
         lobby: Arc::new(Lobby::new()),
     };
+
+
     let session = session::Listner::new(Arc::clone(&state.lobby));
     tokio::spawn(session.start());
+
+
     let app = Router::new()
         .route("/", get(controllers::index))
         .route("/ws", get(controllers::ws))

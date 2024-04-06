@@ -3,7 +3,6 @@ use tokio::{
     task::JoinHandle,
     io::{
         AsyncBufReadExt,
-        AsyncReadExt,
         BufReader
     }
 };
@@ -22,7 +21,7 @@ impl Listner {
     }
     pub async fn start(self) -> JoinHandle<()> {
         let lobby = Arc::clone(&self.lobby);
-        let mut game_loop;
+        let mut game_loop = None;
 
         let stdin = tokio::io::stdin();
         let mut reader = BufReader::new(stdin);
@@ -35,12 +34,17 @@ impl Listner {
             match words[0] {
                 "start" => {
                     println!("-- on --");
-                    game_loop = tokio::spawn(lobby.start().await.unwrap());
+                    game_loop = Some(tokio::spawn(lobby.start().await.unwrap()));
                 },
                 "character" => {
                     let num: usize = words[1].parse::<usize>().unwrap() - 1;
                     if let State::On{game} = &*self.lobby.state.lock().await {
                         dbg!(game.get_character(Num::from_idx(num)).info.lock().await.role);
+                    }
+                },
+                "abort" => {
+                    if let Some(game_loop) = &game_loop {
+                        game_loop.abort();
                     }
                 }
                 _ => continue,

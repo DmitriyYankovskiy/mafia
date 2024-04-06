@@ -1,10 +1,7 @@
 use std::{
-    collections::HashMap, fs::File, future::Future, io::Read, process::Output, sync::{Arc, Weak}
+    collections::HashMap, future::Future, sync::{Arc, Weak}
 };
-use tokio::{
-    sync::Mutex, task::JoinHandle,
-
-};
+use tokio::sync::Mutex;
 use rand::seq::SliceRandom;
 
 extern crate rand_pcg;
@@ -20,7 +17,6 @@ use {
         character::{Character, Num},
     },
     player::Player,
-    role::{Role, RoleSet},
 };
 
 pub struct Lobby {

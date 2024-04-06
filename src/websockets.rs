@@ -7,7 +7,7 @@ use tokio::sync::{mpsc::{self, Sender}, Mutex};
 
 use crate::{
     lobby::{
-        Lobby, State,
+        State,
         player::Player,
     },
     AppState,

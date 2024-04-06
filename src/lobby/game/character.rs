@@ -28,7 +28,6 @@ impl Num {
 }
 
 #[derive(Debug)]
-
 pub struct CharacterInfo {
     pub num: Num,
     pub role: Role,
