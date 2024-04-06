@@ -7,13 +7,18 @@ function onMessage(event) {
         Main.startGame(event.data);
     }
 }
+
+function onOpen(event) {
+    ws.onopen = event
+}
+
 let Socket = {};
 Socket.init = function () {
     ws.onmessage = onMessage;
 }
 
 Socket.send = function(obj) {
-    console.log(JSON.stringify(obj));
+    ws.send(JSON.stringify(obj));
 }
 
 
