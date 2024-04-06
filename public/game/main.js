@@ -22,8 +22,13 @@ Main.me = {
     role: "Mafia",
     player: {},
 }
-Main.init = function() {
+
+Main.sendInformation = function() {
     Socket.startGame().then(Main.gameEvents.startGame);
+}
+
+Main.init = function() {
+    Socket.setOnOpen(Main.sendInformation);
 };
 
 Main.gameEvents = {};
