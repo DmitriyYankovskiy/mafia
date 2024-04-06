@@ -4,10 +4,8 @@ use serde::{Serialize, Deserialize};
 
 use super::{
     Game,
-    super::{
-        role::Role,
-        player::Player,
-    },
+    role::Role,
+    super::player::Player,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Eq, Hash)]

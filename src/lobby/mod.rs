@@ -7,7 +7,6 @@ use rand::seq::SliceRandom;
 extern crate rand_pcg;
 
 pub mod game;
-pub mod role;
 pub mod player;
 
 use rand_pcg::Pcg32;
@@ -50,7 +49,7 @@ impl Lobby {
         if let State::Setup = state {
             let mut rng = Pcg32::new(time_now() as u64, time_now() as u64);
 
-            let mut roles = role::get_roles(self.players.lock().await.len()).await;
+            let mut roles = game::role::get_roles(self.players.lock().await.len()).await;
             let mut characters = Vec::<Character>::new();
 
             let mut players_vec: Vec<Arc<Player>> = self.players.lock().await.clone().into_iter().map(|(_, v)|v.clone()).collect();

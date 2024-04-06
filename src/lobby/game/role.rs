@@ -30,7 +30,7 @@ impl RoleSet {
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, serde::Serialize)]
 pub enum Role {
     Civilian,
     Mafia,

@@ -8,10 +8,12 @@ use tokio::{
 
 use serde::Deserialize;
 
-use super::role::{Role, RoleSet};
+use role::{Role, RoleSet};
 
 pub mod game_loop;
 pub mod character;
+mod external;
+pub mod role;
 
 use character::{Character, Num};
 use game_loop::Candidate;
@@ -82,6 +84,7 @@ impl Game {
         let mut time_rules = String::new();
         File::open("./rules/times.json").unwrap().read_to_string(&mut time_rules).unwrap();
         let time_rules = serde_json::from_str::<TimeDelays>(&time_rules).unwrap();
+
         Self {
             time_rules,
             characters,
@@ -104,8 +107,20 @@ impl Game {
 
     pub async fn run(me: Arc<Self>) {
         println!("game run");
-        me.game_loop().await;
 
+        for character in &me.characters {
+            let player = character.get_player();
+            let character = character.clone();
+            let cnt_characters = me.characters.len();
+            let _ = player.ws_sender.send(serde_json::to_string(&external::StartInfo {
+                num: character.info.lock().await.num,
+                cnt_characters: cnt_characters,
+                role: character.info.lock().await.role,
+            }).unwrap()).await;
+        }
+
+
+        me.game_loop().await;
     }
 
     async fn game_loop(&self) {
