@@ -1,6 +1,6 @@
 import Main from "./main.js";
 
-let ws = new WebSocket(`ws://${location.hostname}:9998`);
+let ws = new WebSocket(`ws://${location.hostname}:9999/ws`);
 
 function onMessage(event) {
     if (Main.phase == "starting") {
@@ -31,11 +31,15 @@ Socket.pickPlayers = function(selectedPlayers) {
 
 Socket.startGame = function() {
     return new Promise(function(resolve, reject) {
-        // ws.send();
-        ws.onmessage = function() {
-            resolve({"role": "Mafia", "number": 6});
-        };
-        resolve({"role": "Mafia", "number": 7});
+        ws.onopen = function() {
+            console.log("pp");
+            ws.send({name: "Aboba228"});
+            ws.onmessage = function() {
+                resolve({"role": "Mafia", "number": 6});
+            };
+            resolve({"role": "Mafia", "number": 7, "countPlayers": 10});
+            ws.onmessage = Socket.onmessage;
+        }
     });
 };
 

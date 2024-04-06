@@ -12,18 +12,6 @@ pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
 
     let mut context = tera::Context::from_value(json!({
         "title": "Mafia | Game #001",
-        "players" : [
-            {"number": 1},
-            {"number": 2},
-            {"number": 3},
-            {"number": 4},
-            {"number": 5},
-            {"number": 6},
-            {"number": 7},
-            {"number": 8},
-            {"number": 9},
-            {"number": 10}
-        ]
     })).unwrap();
     context.insert("page", &tera.render("game/index.html", &context).unwrap());
     Html::from(tera.render("layouts/main.html", &context).unwrap())

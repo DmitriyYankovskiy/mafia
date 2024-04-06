@@ -17,15 +17,6 @@
             <div class="show-my-role-button" id="show-my-role-button">
                 <img class="show-my-role-img" src = "public/game/show_my_role.png">
             </div>
-            {% for player in players %}
-                <div class="player-container" id="player-container-{{player.number}}">
-                    <div class="player unselected-player" id="player-{{player.number}}">
-                        <span class="player-number" id="player-number-{{player.number}}">
-                            {{player.number}}
-                        </span>
-                    </div>
-                </div>
-            {% endfor %}
         </div>
     </div>
 </div>

@@ -23,21 +23,32 @@ Main.me = {
     player: {},
 }
 Main.init = function() {
-    let j = 1;
-    for (let i of tableElement.childNodes) {
-        if (i.id == `player-container-${j}`) {
-            this.players[j] = new Player(j);
-            j++;
-        }
-    }
-    Socket.init();
-    Table.init();
     Socket.startGame().then(Main.gameEvents.startGame);
 };
 
 Main.gameEvents = {};
 
 Main.gameEvents.startGame = function (data) {
+    Socket.init();
+    Table.init();
+    let j = 1;
+    for (let i = 1; i <= data.countPlayers; i++) {
+        tableElement.innerHTML += `
+        <div class="player-container" id="player-container-${i}">
+            <div class="player unselected-player" id="player-${i}">
+                <span class="player-number" id="player-number-${i}">
+                    ${i}
+                </span>
+            </div>
+        </div>
+        `;
+    }
+    for (let i of tableElement.childNodes) {
+        if (i.id == `player-container-${j}`) {
+            Main.players[j] = new Player(j);
+            j++;
+        }
+    }
     Main.me.role = data.role;
     Main.me.player = Main.players[data.number];
     Main.players[Main.me.player.number].type = "me";
