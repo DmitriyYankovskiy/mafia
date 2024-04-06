@@ -6,9 +6,9 @@ use axum::extract::ws::{Message, WebSocket};
 use tokio::sync::{mpsc::{self, Sender}, Mutex};
 
 use crate::{
-    game_state:: {
-        GameState,
-        game::player::Player,
+    lobby::{
+        State,
+        player::Player,
     },
     AppState,
     PlayerInfo,
@@ -17,22 +17,19 @@ use crate::{
 const BUF: usize = 1000;
 
 pub async fn player(mut ws: WebSocket, state: AppState) {
-    let game = state.game;
+    let lobby = state.lobby;
 
     let (req_tx, req_rx) = mpsc::channel::<String>(BUF);
     let (res_tx, mut res_rx) = mpsc::channel::<String>(BUF);
 
-    let req_rx = Arc::new(Mutex::new(req_rx));
+    let req_rx = Mutex::new(req_rx);
 
     while let Some(Ok(msg)) = ws.recv().await {
-        println!("|| new ws msg"); 
         if let Ok(msg_str) = msg.to_text() {
             if let Ok(player_info) = from_str::<PlayerInfo>(msg_str) {
-                if let GameState::Setup(setup) = &mut *game.lock().await {
-                    setup.add_player(Player::new(player_info.name.clone(), Sender::clone(&res_tx), req_rx)).await.unwrap();
-                    println!("|| new character with name: {}", &player_info.name);
+                if let State::Setup = &mut *lobby.state.lock().await {
+                    lobby.add_player(Player::new(player_info.name.clone(), Sender::clone(&res_tx), req_rx)).await.unwrap();
                 }
-
                 break;
             }
         }

@@ -7,13 +7,14 @@ function onMessage(event) {
         Main.startGame(event.data);
     }
 }
+
+function onOpen(event) {
+    ws.onopen = event
+}
+
 let Socket = {};
 Socket.init = function () {
     ws.onmessage = onMessage;
-    ws.onopen = function () {
-        let me = { name: "Akke" };
-        Socket.send(me);
-    }
 }
 
 Socket.send = function(obj) {
@@ -33,9 +34,10 @@ Socket.pickPlayers = function(selectedPlayers) {
     }
 }
 
-Socket.startGame = function() {
-    return new Promise(function(resolve, reject) {
-        // ws.send();
+Socket.startGame = function () {    
+    let userName = (prompt("name:", "Peter") || "Peter").toString();
+    ws.send(JSON.stringify({ name: userName }));
+    return new Promise(function (resolve, reject) {
         ws.onmessage = function() {
             resolve({"role": "Mafia", "number": 6});
         };

@@ -2,13 +2,13 @@ use std::sync::{Arc, Weak};
 use tokio::sync::{mpsc::{Receiver, Sender}, Mutex};
 
 use super::{
-    character::{Character, Num},
     Game,
+    game::character::{Character, Num},
 };
 
 pub mod message {
     use serde::{Serialize, Deserialize};
-    use super::super::character::Num;
+    use super::super::game::character::Num;
     
     #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
     pub enum Message {
@@ -19,33 +19,39 @@ pub mod message {
 }
 use message::Message;
 
-
 #[derive(Debug, Clone)]
-pub struct Player {
+pub struct PlayerInfo {
     pub name: String,
+}
+
+#[derive(Debug)]
+pub struct Player {
+    pub info: Mutex<PlayerInfo>,
     pub ws_sender: Sender<String>,
-    pub ws_receiver: Arc<Mutex<Receiver<String>>>,
-    pub action_receiver: Arc<Mutex<Receiver<Message>>>,
+    pub ws_receiver: Mutex<Receiver<String>>,
+    pub action_receiver: Mutex<Receiver<Message>>,
     pub action_sender: Sender<Message>,
-    pub character: Weak<Mutex<Character>>,
+    pub character: Mutex<Weak<Character>>,
 }
 
 impl Player {
-    pub fn new(name: String, ws_sender: Sender<String>, ws_receiver: Arc<Mutex<Receiver<String>>>) -> Self {
+    pub fn new(name: String, ws_sender: Sender<String>, ws_receiver: Mutex<Receiver<String>>) -> Self {
         let (sender, receiver) = tokio::sync::mpsc::channel(100);
         Player { 
-            name, character: Weak::new(), ws_sender, ws_receiver,
-            action_receiver: Arc::new(Mutex::new(receiver)),
+            info: Mutex::new(PlayerInfo{name}),
+            character: Mutex::new(Weak::new()),
+            ws_sender, ws_receiver,
+            action_receiver: Mutex::new(receiver),
             action_sender: sender,
         }
     }
 
-    pub fn get_character(&self) -> Arc<Mutex<Character>> {
-        self.character.upgrade().unwrap()
+    pub async fn get_character(&self) -> Arc<Character> {
+        self.character.lock().await.upgrade().unwrap()
     }
 
-    pub async fn get_game(&self) -> Arc<Mutex<Game>> {
-        self.get_character().lock().await.get_game()
+    pub async fn get_game(&self) -> Arc<Game> {
+        self.get_character().await.get_game().await
     }
 
     pub async fn listen(&self) {

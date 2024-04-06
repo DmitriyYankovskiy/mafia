@@ -30,6 +30,5 @@ pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 pub async fn ws(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
-    println!("|| ws for new players opening");
     ws.on_upgrade(move|ws| {websockets::player(ws, state)})
 }
