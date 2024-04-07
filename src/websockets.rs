@@ -4,6 +4,7 @@ use serde_json::from_str;
 
 use axum::extract::ws::{Message, WebSocket};
 use tokio::sync::{mpsc::{self, Sender}, Mutex};
+use futures::{SinkExt, StreamExt};
 
 use crate::{
     lobby::{
@@ -35,17 +36,16 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
         }
     }
 
-    let ws_req = Arc::new(Mutex::new(ws));
-    let ws_res = Arc::clone(&ws_req);
-    
-    tokio::spawn(async move {
+    let (mut ws_req, mut ws_res) = ws.split();
+
+    let _ = tokio::spawn(async move {        
         while let Some(msg) = res_rx.recv().await {
-            ws_res.lock().await.send(Message::Text(msg)).await.unwrap();
+            ws_req.send(Message::Text(msg)).await.unwrap();
         }
     });
 
-    tokio::spawn(async move {
-        while let Some(result_msg) = ws_req.lock().await.recv().await {
+    let _ = tokio::spawn(async move {
+        while let Some(result_msg) = ws_res.next().await {
             if let Ok(msg) = result_msg {
                 if let Ok(msg_str) = msg.to_text() {
                     req_tx.send(msg_str.to_string()).await.unwrap();

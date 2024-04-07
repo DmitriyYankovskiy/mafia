@@ -112,13 +112,18 @@ impl Game {
             let player = character.get_player();
             let character = character.clone();
             let cnt_characters = me.characters.len();
-            let _ = player.ws_sender.send(serde_json::to_string(&external::StartInfo {
-                num: character.info.lock().await.num,
-                cnt_characters: cnt_characters,
-                role: character.info.lock().await.role,
-            }).unwrap()).await;
+            println!("{}", cnt_characters);
+            player.ws_sender.send(serde_json::to_string({
+                let info = &character.info.lock().await; println!("READY");
+                &external::StartInfo {
+                    num: info.num,
+                    cnt_characters: cnt_characters,
+                    role: info.role,
+                }
+            }).unwrap()).await.unwrap();
         }
 
+        println!("all");
 
         me.game_loop().await;
     }

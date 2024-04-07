@@ -21,3 +21,4 @@ tera = { version = "1.19.1"}
 
 set = {version = "*", git = "https://github.com/DmitriyYankovskiy/set.git"}
 rand_pcg = "0.3.1"
+futures = "0.3.30"
