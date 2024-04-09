@@ -26,16 +26,24 @@ Socket.send = function(obj) {
 }
 
 
-Socket.pickPlayers = function(selectedPlayers) {
-    if (selectedPlayers.length == 0) {
-        Socket.send({
-            vote: 0,
-        });
-    } else {
-        Socket.send({
-            vote: selectedPlayers[0].number,
-        });
-    }
+Socket.accuse = function(selectedPlayer) {
+    Socket.send({
+        Accuse: {
+            target: selectedPlayer.number
+        }
+    });
+}
+
+Socket.action = function(selectedPlayer) {
+    Socket.send({
+        Action: {
+            target: selectedPlayer.number
+        }
+    });
+}
+
+Socket.vote = function() {
+    Socket.send({vote: {}});
 }
 
 Socket.startGame = function() {

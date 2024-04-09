@@ -148,32 +148,32 @@ Main.gameEvents.killPlayer = function (player) {
 Main.playersEvents = {};
 
 Main.playersEvents.okPress = function() {
-    if (Main.phase.ableToSelecting && Main.me.player.state != "dead") {
+    if (Main.phase.ableToSelecting && Main.me.player.state != "dead" && Main.selectedPlayers.length > 0) {
         if (Main.dayOrNight == "day") {
             if (Main.phase.name == "saying") {
-                Socket.pickPlayers(Main.selectedPlayers);
+                Socket.accuse(Main.selectedPlayers[0]);
                 Main.phase.ableToSelecting = false;
                 /*? Main.selectedPlayers.push(Main.me.player);*/
                 /*? Main.selectedPlayers.push(Main.players[3]);*/
-                /*?*/ Main.gameEvents.startVoting(Main.selectedPlayers);
-                /*?*/ Main.gameEvents.votingFor(0);
+                /*? Main.gameEvents.startVoting(Main.selectedPlayers); */
+                /*? Main.gameEvents.votingFor(0); */
             } else if (Main.phase.name == "voting") {
                 if (Main.selectedPlayers.length != 0 && Main.phase.target == Main.selectedPlayers[0]) {
-                    Socket.pickPlayers(Main.selectedPlayers);
+                    Socket.vote();
                     Main.phase.ableToSelecting = false;
 
-                    /*?*/ Main.gameEvents.startSunset();
-                    /*?*/ setTimeout(Main.gameEvents.startNight, 1000);
+                    /*? Main.gameEvents.startSunset(); */
+                    /*? setTimeout(Main.gameEvents.startNight, 1000); */
                 }
             }
         } else if (Main.dayOrNight == "night") {
             if (Main.me.role != "Civilian") {
-                Socket.pickPlayers(Main.selectedPlayers);
+                Socket.action(Main.selectedPlayers[0]);
                 Main.phase.ableToSelecting = false;
 
-                /*?*/ Main.gameEvents.startSaying(Main.me.player);
-                /*?*/ Main.gameEvents.saying(Main.me.player);
-                /*?*/ if (Main.selectedPlayers.length != 0) Main.gameEvents.killPlayer(Main.selectedPlayers[0])
+                /*? Main.gameEvents.startSaying(Main.me.player); */
+                /*? Main.gameEvents.saying(Main.me.player);
+                /*?*  if (Main.selectedPlayers.length != 0) Main.gameEvents.killPlayer(Main.selectedPlayers[0]) */
             }
         }
     }
