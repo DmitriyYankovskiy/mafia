@@ -7,7 +7,7 @@ let Socket = {};
 Socket.onmessage = function(event) {
     console.log(JSON.parse(event.data));
     let data = JSON.parse(event.data);
-    if (Main.phase == "starting") {
+    if (data.) {
         Main.startGame(event.data);
     }
 }
@@ -43,7 +43,7 @@ Socket.action = function(selectedPlayer) {
 }
 
 Socket.vote = function() {
-    Socket.send({vote: {}});
+    Socket.send({Vote: {}});
 }
 
 Socket.startGame = function() {
