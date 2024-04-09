@@ -80,19 +80,19 @@ Main.gameEvents.startSunrise = function () {
     Table.redrawTable();
 };
 
-Main.gameEvents.startSaying = function () {
+Main.gameEvents.startDiscussion = function () {
     Main.dayOrNight = "day";
     Main.phase = {
-        name: "saying",
+        name: "discussion",
         targets: [],
-        whoSaying: {},
+        whoDiscussion: {},
         ableToSelecting: false,
     }
     Table.redrawTable();
 };
 
-Main.gameEvents.saying = function (say) {
-    Main.phase.whoSaying = say;
+Main.gameEvents.discussion = function (say) {
+    Main.phase.whoDiscussion = say;
     if (say == Main.me.player) {
         Main.phase.ableToSelecting = true;
     } else {
@@ -150,7 +150,7 @@ Main.playersEvents = {};
 Main.playersEvents.okPress = function() {
     if (Main.phase.ableToSelecting && Main.me.player.state != "dead" && Main.selectedPlayers.length > 0) {
         if (Main.dayOrNight == "day") {
-            if (Main.phase.name == "saying") {
+            if (Main.phase.name == "discussion") {
                 Socket.accuse(Main.selectedPlayers[0]);
                 Main.phase.ableToSelecting = false;
                 /*? Main.selectedPlayers.push(Main.me.player);*/
@@ -171,8 +171,8 @@ Main.playersEvents.okPress = function() {
                 Socket.action(Main.selectedPlayers[0]);
                 Main.phase.ableToSelecting = false;
 
-                /*? Main.gameEvents.startSaying(Main.me.player); */
-                /*? Main.gameEvents.saying(Main.me.player);
+                /*? Main.gameEvents.startDiscussion(Main.me.player); */
+                /*? Main.gameEvents.discussion(Main.me.player);
                 /*?*  if (Main.selectedPlayers.length != 0) Main.gameEvents.killPlayer(Main.selectedPlayers[0]) */
             }
         }
