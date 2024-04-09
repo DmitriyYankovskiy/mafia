@@ -80,6 +80,12 @@ pub struct Game {
 }
 
 impl Game {
+    fn send_time(&self, time: external::TimeInfo) {
+        for character in &self.characters {
+            character.get_player().ws_sender.send(serde_json::to_string(&time).unwrap());
+        }
+    }
+
     pub fn new(characters: Vec<Arc<Character>>) -> Self {
         let mut time_rules = String::new();
         File::open("./rules/times.json").unwrap().read_to_string(&mut time_rules).unwrap();
@@ -134,9 +140,16 @@ impl Game {
             println!(" --- round: {} ---", self.round.lock().await);        
 
             *self.round.lock().await += 1;
+            self.send_time(external::TimeInfo::Discussion);
             let candidates: Vec<Num> = self.discussion().await;
+
+            self.send_time(external::TimeInfo::Voting);
             let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
+            
+            self.send_time(external::TimeInfo::Sunset);
             self.sunset(dies).await;
+
+            self.send_time(external::TimeInfo::Sunrise);
             let dies = self.night().await;
             self.sunrise(dies).await;
 
