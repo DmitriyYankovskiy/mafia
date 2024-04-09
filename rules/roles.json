@@ -5,13 +5,18 @@
         "don": false,
         "civilian": 1
     },
+    "2": {
+        "mafia": 1,
+        "sheriff": false,
+        "don": false,
+        "civilian": 1
+    },
     "7": {
         "mafia": 2,
         "sheriff": true,
         "don": false,
         "civilian": 4
     },
-
     "10": {
         "mafia": 2,
         "don": true,

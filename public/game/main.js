@@ -37,7 +37,7 @@ Main.gameEvents.startGame = function (data) {
     Socket.init();
     Table.init();
     let j = 1;
-    for (let i = 1; i <= data.countPlayers; i++) {
+    for (let i = 1; i <= data.cnt_characters; i++) {
         tableElement.innerHTML += `
         <div class="player-container" id="player-container-${i}">
             <div class="player unselected-player" id="player-${i}">
@@ -55,7 +55,7 @@ Main.gameEvents.startGame = function (data) {
         }
     }
     Main.me.role = data.role;
-    Main.me.player = Main.players[data.number];
+    Main.me.player = Main.players[data.num];
     Main.players[Main.me.player.number].type = "me";
     Table.redrawTable();
     Table.showRole();
@@ -66,7 +66,7 @@ Main.gameEvents.startNight = function () {
     Main.dayOrNight = "night";
     Main.phase = {
         name: "night",
-        ableToSelecting: (Main.me.role == "Cityzen" ? false : true),
+        ableToSelecting: (Main.me.role == "Civilian" ? false : true),
     }
     Table.redrawTable();
 };
@@ -167,7 +167,7 @@ Main.playersEvents.okPress = function() {
                 }
             }
         } else if (Main.dayOrNight == "night") {
-            if (Main.me.role != "Cityzen") {
+            if (Main.me.role != "Civilian") {
                 Socket.pickPlayers(Main.selectedPlayers);
                 Main.phase.ableToSelecting = false;
 

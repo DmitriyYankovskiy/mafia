@@ -5,6 +5,8 @@ let ws;
 let Socket = {};
 
 Socket.onmessage = function(event) {
+    console.log(JSON.parse(event.data));
+    let data = JSON.parse(event.data);
     if (Main.phase == "starting") {
         Main.startGame(event.data);
     }
@@ -16,7 +18,7 @@ Socket.setOnOpen = function(event) {
 }
 
 Socket.init = function () {
-    ws.onmessage = onMessage;
+    ws.onmessage = Socket.onmessage;
 }
 
 Socket.send = function(obj) {
@@ -39,11 +41,11 @@ Socket.pickPlayers = function(selectedPlayers) {
 Socket.startGame = function() {
     return new Promise(function(resolve, reject) {
         ws.send(JSON.stringify({name: (prompt("name:", "Player") || "Player")}));
-        ws.onmessage = function(e) {
+        ws.onmessage = (e) => {
+            console.log(JSON.parse(e.data));
             resolve(JSON.parse(e.data));
+            ws.onmessage = Socket.onmessage;
         };
-        //resolve({"role": "Mafia", "number": 7, "countPlayers": 10});
-        ws.onmessage = Socket.onmessage;
     });
 };
 
