@@ -20,3 +20,10 @@ pub enum TimeInfo {
     Voting,
     Sunset,
 }
+
+#[derive(Debug, serde::Serialize)]
+pub enum ActionInfo {
+    Die {num: Num},
+    Vote {num: Num},
+    Accuse {num: Num},
+}

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::Arc, fs::File, io::Read};
+use std::{collections::HashSet, fs::File, io::Read, sync::Arc, vec};
 
 use tokio::{
     task::JoinHandle,
@@ -17,6 +17,8 @@ pub mod role;
 
 use character::{Character, Num};
 use game_loop::Candidate;
+
+use super::player::Player;
 
 #[derive(Deserialize)]
 struct TimeDelays {
@@ -80,6 +82,12 @@ pub struct Game {
 }
 
 impl Game {
+    async fn send_action(characters: &Vec<Arc<Character>>, action: external::ActionInfo) {
+        for character in characters {
+            let _ = character.get_player().ws_sender.send(serde_json::to_string(&action).unwrap()).await;
+        }
+    }
+
     async fn send_time(&self, time: external::TimeInfo) {
         for character in &self.characters {
             let _ = character.get_player().ws_sender.send(serde_json::to_string(&time).unwrap()).await;
@@ -179,6 +187,7 @@ impl Game {
             let player = character.get_player();
             
             let candidates = Arc::clone(&candidates);
+            let characters = self.characters.clone();
             let listner = tokio::spawn(async move {
                 'recv: loop {
                     let num = player.recv_accuse().await;
@@ -187,6 +196,7 @@ impl Game {
                             continue 'recv;
                         }
                     }
+                    Game::send_action(&characters, external::ActionInfo::Accuse { num }).await;
                     candidates.lock().await.push(num);
                 }
             });
@@ -214,8 +224,11 @@ impl Game {
                     continue;
                 }
                 let player = character.get_player();
+
+                let characters = self.characters.clone();
                 listners.push(tokio::spawn(async move {
                     if player.recv_vote().await {
+                        Game::send_action(&characters, external::ActionInfo::Vote { num }).await;
                         Some(num)
                     } else {
                         None
@@ -317,7 +330,9 @@ impl Game {
     }
 
     async fn dying(&self, dies: &Vec<Num>) {
+        let characters = self.characters.clone();
         for die in dies {
+            Game::send_action(&characters, external::ActionInfo::Die { num: *die }).await;
             self.get_character(*die).die().await;
         }
         for _ in dies {
