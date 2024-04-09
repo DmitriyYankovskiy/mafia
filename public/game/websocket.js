@@ -7,8 +7,24 @@ let Socket = {};
 Socket.onmessage = function(event) {
     console.log(JSON.parse(event.data));
     let data = JSON.parse(event.data);
-    if (data.) {
-        Main.startGame(event.data);
+    if ("Sunrise" in data) {
+        Main.gameEvents.startSunrise();
+    } else if ("Discussion" in data) {
+        Main.gameEvents.startDiscussion();
+    } else if ("Voting" in data) {
+        Main.gameEvents.startVoting();
+    } else if ("Sunset" in data) {
+        Main.gameEvents.startSunset();
+    } else if ("Night" in data) {
+        Main.gameEvents.startNight();
+    }
+
+    if ("Accuse" in data) {
+        Main.gameEvents.addAccusions(Main.players[data.Accuse.num]);
+    } else if ("Vote" in data) {
+        Main.gameEvents.addVoice(Main.players[data.Vote.num]);
+    } else if ("Die" in data) {
+        Main.gameEvents.killPlayer(Main.players[data.Die.num]);
     }
 }
 

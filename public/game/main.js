@@ -84,14 +84,13 @@ Main.gameEvents.startDiscussion = function () {
     Main.dayOrNight = "day";
     Main.phase = {
         name: "discussion",
-        targets: [],
         whoDiscussion: {},
         ableToSelecting: false,
     }
     Table.redrawTable();
 };
 
-Main.gameEvents.discussion = function (say) {
+Main.gameEvents.nextDiscussioner = function (say) {
     Main.phase.whoDiscussion = say;
     if (say == Main.me.player) {
         Main.phase.ableToSelecting = true;
@@ -101,10 +100,10 @@ Main.gameEvents.discussion = function (say) {
     Table.redrawTable();
 };
 
-Main.gameEvents.addTarget = function (player) {
-    Main.phase.targets.push(player);
-    Table.redrawTable();
-};
+// Main.gameEvents.addTarget = function (player) {
+//     Main.phase.targets.push(player);
+//     Table.redrawTable();
+// };
 
 Main.gameEvents.startVoting = function (targets) {
     Main.dayOrNight = "day";
@@ -118,6 +117,12 @@ Main.gameEvents.startVoting = function (targets) {
         if (Main.phase.targets[i].type != "dead") Main.phase.targets[i].type = "target";
     }
 };
+
+Main.gameEvents.addVoice = function(player) {
+    alert(player.number);
+    Table.redrawTable();
+}
+
 
 Main.gameEvents.votingFor = function (number) {
     for (let i in Main.phase.targets) {
@@ -144,6 +149,10 @@ Main.gameEvents.killPlayer = function (player) {
     player.state = "dead";
 } 
 
+Main.gameEvents.addAccusinon = function(player) {
+    player.type = "target";
+    Table.redrawTable();
+}
 
 Main.playersEvents = {};
 

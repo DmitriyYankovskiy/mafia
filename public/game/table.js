@@ -59,7 +59,7 @@ Table.redrawTable = function() {
     if (!Main.phase.ableToSelecting || Main.me.player.state == "dead") {
         Table.okElement.classList.add("invisible");
     } else {
-        if (Main.phase.name == "saying") {
+        if (Main.phase.name == "discussion") {
             Table.okSpanElement.innerHTML = "Put it up";
         } else if (Main.phase.name == "voting") {
             Table.okSpanElement.innerHTML = "Vote";
