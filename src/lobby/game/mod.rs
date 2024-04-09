@@ -80,9 +80,9 @@ pub struct Game {
 }
 
 impl Game {
-    fn send_time(&self, time: external::TimeInfo) {
+    async fn send_time(&self, time: external::TimeInfo) {
         for character in &self.characters {
-            character.get_player().ws_sender.send(serde_json::to_string(&time).unwrap());
+            let _ = character.get_player().ws_sender.send(serde_json::to_string(&time).unwrap()).await;
         }
     }
 
@@ -140,17 +140,19 @@ impl Game {
             println!(" --- round: {} ---", self.round.lock().await);        
 
             *self.round.lock().await += 1;
-            self.send_time(external::TimeInfo::Discussion);
+            self.send_time(external::TimeInfo::Discussion).await;
             let candidates: Vec<Num> = self.discussion().await;
 
-            self.send_time(external::TimeInfo::Voting);
+            self.send_time(external::TimeInfo::Voting).await;
             let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
             
-            self.send_time(external::TimeInfo::Sunset);
+            self.send_time(external::TimeInfo::Sunset).await;
             self.sunset(dies).await;
 
-            self.send_time(external::TimeInfo::Sunrise);
+            self.send_time(external::TimeInfo::Night).await;
             let dies = self.night().await;
+
+            self.send_time(external::TimeInfo::Sunrise).await;
             self.sunrise(dies).await;
 
             if self.check_end().await {
