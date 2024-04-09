@@ -37,7 +37,6 @@ async fn main() {
         lobby: Arc::new(Lobby::new()),
     };
 
-
     let session = session::Listner::new(Arc::clone(&state.lobby));
     tokio::spawn(session.start());
 

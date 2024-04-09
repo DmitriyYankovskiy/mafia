@@ -10,3 +10,13 @@ pub struct StartInfo {
     pub cnt_characters: usize,
     pub role: Role,
 }
+
+
+#[derive(Debug, serde::Serialize)]
+pub enum TimeInfo {
+    Night,
+    Sunrise, 
+    Discussion,
+    Voting,
+    Sunset,
+}
