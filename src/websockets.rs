@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use serde_json::from_str;
 
 use axum::extract::ws::{Message, WebSocket};
@@ -50,7 +48,7 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
                 if let Ok(msg_str) = msg.to_text() {
                     req_tx.send(msg_str.to_string()).await.unwrap();
                 }
-            }
+            };
         }
     });
 }
