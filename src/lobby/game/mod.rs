@@ -84,13 +84,13 @@ pub struct Game {
 impl Game {
     async fn send_action(characters: &Vec<Arc<Character>>, action: external::ActionInfo) {
         for character in characters {
-            let _ = character.get_player().ws_sender.send(serde_json::to_string(&action).unwrap()).await;
+            let _ = character.get_player().ws_sender.send(format!("{{\"Action\":{}}}", serde_json::to_string(&action).unwrap())).await;
         }
     }
 
     async fn send_time(&self, time: external::TimeInfo) {
         for character in &self.characters {
-            let _ = character.get_player().ws_sender.send(format!("{{\"next_phase\":{}}}", serde_json::to_string(&time).unwrap())).await;
+            let _ = character.get_player().ws_sender.send(format!("{{\"NextPhase\":{}}}", serde_json::to_string(&time).unwrap())).await;
         }
     }
 
