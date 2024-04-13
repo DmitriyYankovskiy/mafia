@@ -94,6 +94,12 @@ impl Game {
         }
     }
 
+    async fn send_who_tell(characters: &Vec<Arc<Character>>, num: Num) {
+        for character in characters {
+            let _ = character.get_player().ws_sender.send(format!("{{\"WhoTell\":{}}}", serde_json::to_string(&num).unwrap())).await;
+        }
+    }
+
     pub fn new(characters: Vec<Arc<Character>>) -> Self {
         let mut time_rules = String::new();
         File::open("./rules/times.json").unwrap().read_to_string(&mut time_rules).unwrap();
