@@ -5,26 +5,27 @@ let ws;
 let Socket = {};
 
 Socket.onmessage = function(event) {
+    console.log(event.data);
     console.log(JSON.parse(event.data));
     let data = JSON.parse(event.data);
-    if ("Sunrise" in data) {
+    if ("Sunrise" == data.NextPhase) {
         Main.gameEvents.startSunrise();
-    } else if ("Discussion" in data) {
+    } else if ("Discussion" == data.NextPhase) {
         Main.gameEvents.startDiscussion();
-    } else if ("Voting" in data) {
+    } else if ("Voting" == data.NextPhase) {
         Main.gameEvents.startVoting();
-    } else if ("Sunset" in data) {
+    } else if ("Sunset" == data.NextPhase) {
         Main.gameEvents.startSunset();
-    } else if ("Night" in data) {
+    } else if ("Night" == data.NextPhase) {
         Main.gameEvents.startNight();
     }
 
-    if ("Accuse" in data) {
-        Main.gameEvents.addAccusions(Main.players[data.Accuse.num]);
-    } else if ("Vote" in data) {
-        Main.gameEvents.addVoice(Main.players[data.Vote.num]);
-    } else if ("Die" in data) {
-        Main.gameEvents.killPlayer(Main.players[data.Die.num]);
+    if ("Accuse" == data.Action) {
+        Main.gameEvents.addAccusions(Main.players[data.Action.Accuse.num]);
+    } else if ("Vote" == data.Action) {
+        Main.gameEvents.addVoice(Main.players[data.Action.Vote.num]);
+    } else if ("Die" == data.Action) {
+        Main.gameEvents.killPlayer(Main.players[data.Action.Die.num]);
     }
 }
 
