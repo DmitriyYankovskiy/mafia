@@ -5,7 +5,6 @@ let ws;
 let Socket = {};
 
 Socket.onmessage = function(event) {
-    console.log(event.data);
     console.log(JSON.parse(event.data));
     let data = JSON.parse(event.data);
     if ("Sunrise" == data.NextPhase) {

@@ -34,8 +34,8 @@ Main.init = function() {
 Main.gameEvents = {};
 
 Main.gameEvents.startGame = function (data) {
+    console.log(data);
     Socket.init();
-    Table.init();
     let j = 1;
     for (let i = 1; i <= data.cnt_characters; i++) {
         tableElement.innerHTML += `
@@ -57,7 +57,7 @@ Main.gameEvents.startGame = function (data) {
     Main.me.role = data.role;
     Main.me.player = Main.players[data.num];
     Main.players[Main.me.player.number].type = "me";
-    Table.redrawTable();
+    Table.init();
     Table.showRole();
     setTimeout(Table.hideRole, 3000);
 };

@@ -26,12 +26,6 @@ function playerClickListener(e) {
 }
 let Table = {};
 
-Table.backgroundElement = document.getElementById("background");
-Table.roleSpanElement = document.getElementById("role-span");
-Table.showMyRoleElement = document.getElementById("show-my-role-button");
-Table.okSpanElement = document.getElementById("ok-span");
-Table.okElement = document.getElementById("ok-button");
-
 Table.redrawTable = function() {
     if (players.length == 0) {
         return;
@@ -97,6 +91,13 @@ Table.redrawTable = function() {
 }
 
 Table.init = function () {
+    Table.backgroundElement = document.getElementById("background");
+    Table.roleSpanElement = document.getElementById("role-span");
+    Table.showMyRoleElement = document.getElementById("show-my-role-button");
+    Table.okSpanElement = document.getElementById("ok-span");
+    Table.okElement = document.getElementById("ok-button");
+    Table.roleSpanElement.innerHTML = `Your role: ${Main.me.role}`;
+    //console.log(9);
     players = Main.players;
     tableElement = Main.tableElement;
     for (let i in players) {
