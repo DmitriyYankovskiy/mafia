@@ -186,7 +186,8 @@ impl Game {
         for i in 0..self.characters.len() {
             let num = Num::from_idx((i + *self.round.lock().await - 1) % self.characters.len());
             if !self.get_character(num).info.lock().await.alive {continue}
-
+            
+            Game::send_who_tell(&self.characters, num).await;
             println!("  player number {} saying:", num.to_idx() + 1);
 
             let character: Arc<Character> = self.get_character(num);
