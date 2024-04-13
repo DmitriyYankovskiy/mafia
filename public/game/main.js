@@ -147,9 +147,10 @@ Main.gameEvents.startSunset = function () {
 
 Main.gameEvents.killPlayer = function (player) {
     player.state = "dead";
+    Table.redrawTable();
 } 
 
-Main.gameEvents.addAccusinon = function(player) {
+Main.gameEvents.addAccusion = function(player) {
     player.type = "target";
     Table.redrawTable();
 }

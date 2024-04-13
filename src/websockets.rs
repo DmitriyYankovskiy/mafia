@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde_json::from_str;
 
 use axum::extract::ws::{Message, WebSocket};
@@ -6,8 +8,7 @@ use futures::{SinkExt, StreamExt};
 
 use crate::{
     lobby::{
-        State,
-        player::Player,
+        game::Game, player::Player, State
     },
     AppState,
     PlayerInfo,
@@ -27,7 +28,9 @@ pub async fn player(mut ws: WebSocket, state: AppState) {
         if let Ok(msg_str) = msg.to_text() {
             if let Ok(player_info) = from_str::<PlayerInfo>(msg_str) {
                 if let State::Setup = &mut *lobby.state.lock().await {
-                    lobby.add_player(Player::new(player_info.name.clone(), Sender::clone(&res_tx), req_rx)).await.unwrap();
+                    let player = Arc::new(Player::new(player_info.name.clone(), Sender::clone(&res_tx), req_rx));
+                    let _ = tokio::spawn(Player::listen(player.clone()));
+                    lobby.add_player(player).await.unwrap();
                 }
                 break;
             }

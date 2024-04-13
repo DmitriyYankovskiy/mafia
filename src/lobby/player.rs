@@ -54,12 +54,13 @@ impl Player {
         self.get_character().await.get_game().await
     }
 
-    pub async fn listen(&self) {
-        while let Some(msg) = self.ws_receiver.lock().await.recv().await {
+    pub async fn listen(me: Arc<Self>) {
+        println!("WOW");
+        while let Some(msg) = me.ws_receiver.lock().await.recv().await {
             println!("OMG: i read: {msg}");
 
             let msg = serde_json::from_str::<Message>(&msg).unwrap();
-            self.action_sender.send(msg).await.unwrap();
+            me.action_sender.send(msg).await.unwrap();
         }
     }
 

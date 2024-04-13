@@ -18,13 +18,18 @@ Socket.onmessage = function(event) {
     } else if ("Night" == data.NextPhase) {
         Main.gameEvents.startNight();
     }
+    if ("Action" in data) {
+        if ("Accuse" in data.Action) {
+            Main.gameEvents.addAccusion(Main.players[data.Action.Accuse.num]);
+        } else if ("Vote" in data.Action) {
+            Main.gameEvents.addVoice(Main.players[data.Action.Vote.num]);
+        } else if ("Die" in data.Action) {
+            Main.gameEvents.killPlayer(Main.players[data.Action.Die.num]);
+        }
+    }
 
-    if ("Accuse" == data.Action) {
-        Main.gameEvents.addAccusions(Main.players[data.Action.Accuse.num]);
-    } else if ("Vote" == data.Action) {
-        Main.gameEvents.addVoice(Main.players[data.Action.Vote.num]);
-    } else if ("Die" == data.Action) {
-        Main.gameEvents.killPlayer(Main.players[data.Action.Die.num]);
+    if ("WhoTell" in data) {
+        Main.gameEvents.nextDiscussioner(Main.players[data.WhoTell]);
     }
 }
 
