@@ -94,6 +94,12 @@ impl Game {
         }
     }
 
+    async fn send_who_tell(characters: &Vec<Arc<Character>>, num: Num) {
+        for character in characters {
+            let _ = character.get_player().ws_sender.send(format!("{{\"WhoTell\":{}}}", serde_json::to_string(&num).unwrap())).await;
+        }
+    }
+
     pub fn new(characters: Vec<Arc<Character>>) -> Self {
         let mut time_rules = String::new();
         File::open("./rules/times.json").unwrap().read_to_string(&mut time_rules).unwrap();
@@ -180,7 +186,8 @@ impl Game {
         for i in 0..self.characters.len() {
             let num = Num::from_idx((i + *self.round.lock().await - 1) % self.characters.len());
             if !self.get_character(num).info.lock().await.alive {continue}
-
+            
+            Game::send_who_tell(&self.characters, num).await;
             println!("  player number {} saying:", num.to_idx() + 1);
 
             let character: Arc<Character> = self.get_character(num);
