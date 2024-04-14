@@ -50,7 +50,7 @@ Table.redrawTable = function() {
         }
     }
 
-    if (!Main.phase.ableToSelecting || Main.me.player.state == "dead") {
+    if (!Main.phase.ableToSelecting || Main.me.player.state == "dead" || Main.selectedPlayers.length == 0) {
         Table.okElement.classList.add("invisible");
     } else {
         if (Main.phase.name == "discussion") {

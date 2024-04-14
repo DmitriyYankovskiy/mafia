@@ -116,6 +116,7 @@ Main.gameEvents.startVoting = function (targets) {
     for (let i in Main.phase.targets) {
         if (Main.phase.targets[i].type != "dead") Main.phase.targets[i].type = "target";
     }
+    Table.redrawTable();
 };
 
 Main.gameEvents.addVoice = function(player) {
@@ -124,12 +125,14 @@ Main.gameEvents.addVoice = function(player) {
 }
 
 
-Main.gameEvents.votingFor = function (number) {
+Main.gameEvents.votingFor = function (player) {
     for (let i in Main.phase.targets) {
-        if (Main.phase.targets[i].type != "dead") Main.phase.targets[i].type = "target";
+        if (Main.phase.targets[i].type != "dead") {
+            Main.phase.targets[i].type = "target";
+        }
     }
-    Main.phase.target = Main.phase.targets[number];
-    Main.phase.target.type = "targetNow";
+    Main.phase.target = player;
+    player.type = "targetNow";
     Table.redrawTable();
 };
 
