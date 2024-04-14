@@ -82,6 +82,12 @@ pub struct Game {
 }
 
 impl Game {
+    async fn send_who_put_it_on(characters: &Vec<Arc<Character>>, num: Num) {
+        for character in characters {
+            let _ = character.get_player().ws_sender.send(format!("{{\"WhomVoted\":{}}}", serde_json::to_string(&num).unwrap())).await;
+        }
+    }
+
     async fn send_action(characters: &Vec<Arc<Character>>, action: external::ActionInfo) {
         for character in characters {
             let _ = character.get_player().ws_sender.send(format!("{{\"Action\":{}}}", serde_json::to_string(&action).unwrap())).await;
@@ -225,6 +231,7 @@ impl Game {
         for candidate in &mut candidates {
             let mut listners = vec![];
             let mut cnt = 0usize;
+            Game::send_who_put_it_on(&self.characters, candidate.num).await;
             for character in &self.characters {
                 let num = character.info.lock().await.num;
                 if voted.contains(&num) {
