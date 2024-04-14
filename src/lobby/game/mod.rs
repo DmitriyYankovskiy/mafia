@@ -88,6 +88,12 @@ impl Game {
         }
     }
 
+    async fn send_all_put_it_on(characters: &Vec<Arc<Character>>, nums: &Vec<Num>) {
+        for character in characters {
+            let _ = character.get_player().ws_sender.send(format!("{{\"AllVoted\":{}}}", serde_json::to_string(nums).unwrap())).await;
+        }
+    }
+
     async fn send_action(characters: &Vec<Arc<Character>>, action: external::ActionInfo) {
         for character in characters {
             let _ = character.get_player().ws_sender.send(format!("{{\"Action\":{}}}", serde_json::to_string(&action).unwrap())).await;
@@ -228,6 +234,7 @@ impl Game {
         }
         
         let mut voted = HashSet::<Num>::new();
+        Game::send_all_put_it_on(&self.characters, &candidates.iter().map(|c| c.num).collect()).await;
         for candidate in &mut candidates {
             let mut listners = vec![];
             let mut cnt = 0usize;
