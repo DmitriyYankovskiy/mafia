@@ -31,6 +31,11 @@ Socket.onmessage = function(event) {
     if ("WhoTell" in data) {
         Main.gameEvents.nextDiscussioner(Main.players[data.WhoTell]);
     }
+
+    
+    if ("WhomVoted" in data) {
+        Main.gameEvents.votingFor(Main.players[data.WhomVoted]);
+    }
 }
 
 Socket.setOnOpen = function(event) {
