@@ -1,5 +1,6 @@
 use super::character::Num;
 
+#[derive(Clone, Copy)]
 pub struct Candidate {
     pub num: Num,
     pub cnt_votes: usize,
