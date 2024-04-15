@@ -7,6 +7,7 @@ function Player(number) {
     this.number = number;
     this.state = "alive";
     this.element = document.getElementById(`player-${number}`);
+    this.voicesCounterElement = document.getElementById(`player-voices-counter-${number}`);
     this.type = "";
 }
 let Main = {};
@@ -43,6 +44,9 @@ Main.gameEvents.startGame = function (data) {
             <div class="player unselected-player" id="player-${i}">
                 <span class="player-number" id="player-number-${i}">
                     ${i}
+                </span>
+                <span class="player-voices-counter hidden-span" id="player-voices-counter-${i}">
+                    0
                 </span>
             </div>
         </div>
@@ -100,11 +104,6 @@ Main.gameEvents.nextDiscussioner = function (say) {
     Table.redrawTable();
 };
 
-// Main.gameEvents.addTarget = function (player) {
-//     Main.phase.targets.push(player);
-//     Table.redrawTable();
-// };
-
 Main.gameEvents.startVoting = function (targets) {
     Main.dayOrNight = "day";
     Main.phase = {
@@ -120,9 +119,10 @@ Main.gameEvents.startVoting = function (targets) {
 };
 
 Main.gameEvents.addVoice = function(player) {
+    player = Main.phase.target;
+    player.voicesCounterElement.innerHTML = (Number(player.voicesCounterElement.innerHTML) + 1);
     Table.redrawTable();
 }
-
 
 Main.gameEvents.votingFor = function (player) {
     for (let i in Main.phase.targets) {
@@ -165,27 +165,16 @@ Main.playersEvents.okPress = function() {
             if (Main.phase.name == "discussion") {
                 Socket.accuse(Main.selectedPlayers[0]);
                 Main.phase.ableToSelecting = false;
-                /*? Main.selectedPlayers.push(Main.me.player);*/
-                /*? Main.selectedPlayers.push(Main.players[3]);*/
-                /*? Main.gameEvents.startVoting(Main.selectedPlayers); */
-                /*? Main.gameEvents.votingFor(0); */
             } else if (Main.phase.name == "voting") {
                 if (Main.selectedPlayers.length != 0 && Main.phase.target == Main.selectedPlayers[0]) {
                     Socket.vote();
                     Main.phase.ableToSelecting = false;
-
-                    /*? Main.gameEvents.startSunset(); */
-                    /*? setTimeout(Main.gameEvents.startNight, 1000); */
                 }
             }
         } else if (Main.dayOrNight == "night") {
             if (Main.me.role != "Civilian") {
                 Socket.action(Main.selectedPlayers[0]);
                 Main.phase.ableToSelecting = false;
-
-                /*? Main.gameEvents.startDiscussion(Main.me.player); */
-                /*? Main.gameEvents.discussion(Main.me.player);
-                /*?*  if (Main.selectedPlayers.length != 0) Main.gameEvents.killPlayer(Main.selectedPlayers[0]) */
             }
         }
     }

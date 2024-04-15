@@ -48,6 +48,11 @@ Table.redrawTable = function() {
             players[i].element.style.display = "none";
             players[i].element.parentElement.style.display = "none";
         }
+        if (players[i].state != "dead" && Main.phase.name == "voting" && (players[i].type == "target" || players[i].type == "targetNow")) {
+            players[i].voicesCounterElement.classList.remove("hidden-span");
+        } else {
+            players[i].voicesCounterElement.classList.add("hidden-span");
+        }
     }
 
     if (!Main.phase.ableToSelecting || Main.me.player.state == "dead" || Main.selectedPlayers.length == 0) {

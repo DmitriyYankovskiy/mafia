@@ -12,7 +12,13 @@ Socket.onmessage = function(event) {
     } else if ("Discussion" == data.NextPhase) {
         Main.gameEvents.startDiscussion();
     } else if ("Voting" == data.NextPhase) {
-        Main.gameEvents.startVoting(data.AllVoted);
+
+        let votedPlayers = [];
+        for (let i of data.Votes) {
+            votedPlayers.push(Main.players[i]);
+        }
+
+        Main.gameEvents.startVoting(votedPlayers);
     } else if ("Sunset" == data.NextPhase) {
         Main.gameEvents.startSunset();
     } else if ("Night" == data.NextPhase) {
