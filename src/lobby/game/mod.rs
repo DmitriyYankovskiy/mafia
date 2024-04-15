@@ -18,6 +18,8 @@ pub mod role;
 use character::{Character, Num};
 use game_loop::Candidate;
 
+use self::external::TimeInfo;
+
 use super::player::Player;
 
 #[derive(Deserialize)]
@@ -88,22 +90,21 @@ impl Game {
         }
     }
 
-    async fn send_all_put_it_on(characters: &Vec<Arc<Character>>, nums: &Vec<Num>) {
-        for character in characters {
-            let _ = character.get_player().ws_sender.send(format!("{{\"AllVoted\":{}}}", serde_json::to_string(nums).unwrap())).await;
-        }
-    }
-
     async fn send_action(characters: &Vec<Arc<Character>>, action: external::ActionInfo) {
         for character in characters {
             let _ = character.get_player().ws_sender.send(format!("{{\"Action\":{}}}", serde_json::to_string(&action).unwrap())).await;
         }
     }
 
-    async fn send_time(&self, time: external::TimeInfo) {
-        for character in &self.characters {
-            let _ = character.get_player().ws_sender.send(format!("{{\"NextPhase\":{}}}", serde_json::to_string(&time).unwrap())).await;
-        }
+        async fn send_time(&self, time: external::TimeInfo, nums: Option<Vec<Num>>) {
+            for character in &self.characters {
+                if let TimeInfo::Voting = time {
+                    let nums = nums.clone().unwrap();
+                    let _ = character.get_player().ws_sender.send(format!("{{\"NextPhase\":{},\n\"Votes\":{}}}", serde_json::to_string(&time).unwrap(), serde_json::to_string(&nums).unwrap())).await;
+                } else {
+                    let _ = character.get_player().ws_sender.send(format!("{{\"NextPhase\":{}}}", serde_json::to_string(&time).unwrap())).await;
+                }
+            }
     }
 
     async fn send_who_tell(characters: &Vec<Arc<Character>>, num: Num) {
@@ -166,19 +167,19 @@ impl Game {
             println!(" --- round: {} ---", self.round.lock().await);        
 
             *self.round.lock().await += 1;
-            self.send_time(external::TimeInfo::Discussion).await;
+            self.send_time(external::TimeInfo::Discussion, None).await;
             let candidates: Vec<Num> = self.discussion().await;
 
-            self.send_time(external::TimeInfo::Voting).await;
+            self.send_time(external::TimeInfo::Voting, Some(candidates.clone())).await;
             let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
             
-            self.send_time(external::TimeInfo::Sunset).await;
+            self.send_time(external::TimeInfo::Sunset, None).await;
             self.sunset(dies).await;
 
-            self.send_time(external::TimeInfo::Night).await;
+            self.send_time(external::TimeInfo::Night, None).await;
             let dies = self.night().await;
 
-            self.send_time(external::TimeInfo::Sunrise).await;
+            self.send_time(external::TimeInfo::Sunrise, None).await;
             self.sunrise(dies).await;
 
             if self.check_end().await {
@@ -234,7 +235,6 @@ impl Game {
         }
         
         let mut voted = HashSet::<Num>::new();
-        Game::send_all_put_it_on(&self.characters, &candidates.iter().map(|c| c.num).collect()).await;
         for candidate in &mut candidates {
             let mut listners = vec![];
             let mut cnt = 0usize;
