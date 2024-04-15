@@ -235,6 +235,9 @@ impl Game {
         }
         
         let mut voted = HashSet::<Num>::new();
+        let mut last = *candidates.last().unwrap();
+        let mut sum_cnt = 0;
+        candidates.pop();
         for candidate in &mut candidates {
             let mut listners = vec![];
             let mut cnt = 0usize;
@@ -268,9 +271,13 @@ impl Game {
                     cnt += 1;
                 }
             };
-
+            sum_cnt += cnt;
             candidate.cnt_votes = cnt;
         }
+        
+        last.cnt_votes = self.remain().await.cnt() - sum_cnt;
+        candidates.push(last);
+
         let max = candidates.iter().map(|cand| cand.cnt_votes).max().unwrap();
         let mut dies = vec![];
         for candidate in candidates {

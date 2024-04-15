@@ -28,6 +28,16 @@ impl RoleSet {
         if self.sheriff { cnt += 1; }
         cnt
     }
+
+    pub fn cnt_black(&self) -> usize {
+        let mut cnt = self.mafia;
+        if self.don { cnt += 1; }
+        cnt
+    }
+
+    pub fn cnt(&self) -> usize {
+        self.cnt_red() + self.cnt_black()
+    }
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, serde::Serialize)]
