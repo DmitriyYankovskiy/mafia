@@ -120,7 +120,6 @@ Main.gameEvents.startVoting = function (targets) {
 };
 
 Main.gameEvents.addVoice = function(player) {
-    alert(player.number);
     Table.redrawTable();
 }
 

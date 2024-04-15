@@ -12,7 +12,7 @@ Socket.onmessage = function(event) {
     } else if ("Discussion" == data.NextPhase) {
         Main.gameEvents.startDiscussion();
     } else if ("Voting" == data.NextPhase) {
-        Main.gameEvents.startVoting();
+        Main.gameEvents.startVoting(data.AllVoted);
     } else if ("Sunset" == data.NextPhase) {
         Main.gameEvents.startSunset();
     } else if ("Night" == data.NextPhase) {
@@ -69,7 +69,7 @@ Socket.action = function(selectedPlayer) {
 }
 
 Socket.vote = function() {
-    Socket.send({Vote: {}});
+    Socket.send("Vote");
 }
 
 Socket.startGame = function() {

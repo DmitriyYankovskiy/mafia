@@ -94,12 +94,11 @@
 }
 
 .target-player {
-    background: radial-gradient(#5cb5ff, #1c91ff);
+    border: solid #1c91ff 10px;
 }
 
 .target-now-player {
-    background: radial-gradient(#1e67b9, #0025ca);
-    color: white;
+    border: solid #0025ca 10px;
 }
 
 .show-my-role-button {
