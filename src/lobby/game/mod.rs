@@ -274,7 +274,7 @@ impl Game {
             sum_cnt += cnt;
             candidate.cnt_votes = cnt;
         }
-        
+        println!("{} {sum_cnt}", self.remain().await.cnt());
         last.cnt_votes = self.remain().await.cnt() - sum_cnt;
         candidates.push(last);
 

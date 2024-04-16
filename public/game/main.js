@@ -5,7 +5,8 @@ let tableElement = document.getElementById("round-table");
 
 function Player(number) {
     this.number = number;
-    this.state = "alive";
+    this.state = new Set();
+    this.state.add("alive");
     this.element = document.getElementById(`player-${number}`);
     this.voicesCounterElement = document.getElementById(`player-voices-counter-${number}`);
     this.type = "";
@@ -96,6 +97,11 @@ Main.gameEvents.startDiscussion = function () {
 
 Main.gameEvents.nextDiscussioner = function (say) {
     Main.phase.whoDiscussion = say;
+    for (let i in Main.players) {
+        Main.players[i].state.delete("saying");
+    }
+
+    say.state.add("saying");
     if (say == Main.me.player) {
         Main.phase.ableToSelecting = true;
     } else {
@@ -119,6 +125,7 @@ Main.gameEvents.startVoting = function (targets) {
 };
 
 Main.gameEvents.addVoice = function(player) {
+    player.state.add("voted");
     player = Main.phase.target;
     player.voicesCounterElement.innerHTML = (Number(player.voicesCounterElement.innerHTML) + 1);
     Table.redrawTable();
@@ -130,12 +137,22 @@ Main.gameEvents.votingFor = function (player) {
             Main.phase.targets[i].type = "target";
         }
     }
+
+    for (let i in Main.players) {
+        Main.players[i].state.delete("voted");
+    }
+
     Main.phase.target = player;
     player.type = "targetNow";
     Table.redrawTable();
 };
 
 Main.gameEvents.startSunset = function () {
+
+    for (let i in Main.players) {
+        Main.players[i].state.delete("voted");
+    }
+
     for (let i in Main.phase.targets) {
         if (Main.phase.targets[i].type != "dead") Main.phase.targets[i].type = "alive";
     }
@@ -148,7 +165,7 @@ Main.gameEvents.startSunset = function () {
 };
 
 Main.gameEvents.killPlayer = function (player) {
-    player.state = "dead";
+    player.state.add("dead");
     Table.redrawTable();
 } 
 
@@ -160,7 +177,7 @@ Main.gameEvents.addAccusion = function(player) {
 Main.playersEvents = {};
 
 Main.playersEvents.okPress = function() {
-    if (Main.phase.ableToSelecting && Main.me.player.state != "dead" && Main.selectedPlayers.length > 0) {
+    if (Main.phase.ableToSelecting && !(Main.me.player.state.has("dead"))  && Main.selectedPlayers.length > 0) {
         if (Main.dayOrNight == "day") {
             if (Main.phase.name == "discussion") {
                 Socket.accuse(Main.selectedPlayers[0]);

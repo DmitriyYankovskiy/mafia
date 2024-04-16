@@ -18,7 +18,7 @@ impl RoleSet {
         Self {
             mafia: 0,
             sheriff: false,
-            don: true,
+            don: false,
             civilian: 0,
         }
     }

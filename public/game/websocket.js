@@ -30,7 +30,7 @@ Socket.onmessage = function(event) {
         } else if ("Vote" in data.Action) {
             Main.gameEvents.addVoice(Main.players[data.Action.Vote.num]);
         } else if ("Die" in data.Action) {
-            Main.gameEvents.killPlayer(Main.players[data.Action.Die.num]);
+            Main.gameEvents.killPlayer(Main.players[data.Action.Die.num]); 
         }
     }
 

@@ -8,7 +8,7 @@ function getWidth(element) {
 }
 
 function playerClickListener(e) {
-    if (Main.phase.ableToSelecting == 0 || Main.me.player.state == "dead") return;
+    if (Main.phase.ableToSelecting == 0 || Main.me.player.state.has("dead")) return;
     let number = e.target.id.split("-");
     number = number[number.length - 1];
     Main.selectedPlayers = [];
@@ -42,20 +42,34 @@ Table.redrawTable = function() {
 
     let alivePlayers = [];
     for (let i in players) {
-        if (players[i].state != "dead") {
+        if (!players[i].state.has("dead")) {
             alivePlayers.push(players[i]);
+
+            if (players[i].state.has("voted")) {
+                players[i].element.classList.add("voted-player");
+            } else {
+                players[i].element.classList.remove("voted-player");
+            }
+
+
+            if (players[i].state.has("saying")) {
+                players[i].element.classList.add("saying-player");
+            } else {
+                players[i].element.classList.remove("saying-player");
+            }
+
         } else {
             players[i].element.style.display = "none";
             players[i].element.parentElement.style.display = "none";
         }
-        if (players[i].state != "dead" && Main.phase.name == "voting" && (players[i].type == "target" || players[i].type == "targetNow")) {
+        if (!players[i].state.has("dead") && Main.phase.name == "voting" && (players[i].type == "target" || players[i].type == "targetNow")) {
             players[i].voicesCounterElement.classList.remove("hidden-span");
         } else {
             players[i].voicesCounterElement.classList.add("hidden-span");
         }
     }
 
-    if (!Main.phase.ableToSelecting || Main.me.player.state == "dead" || Main.selectedPlayers.length == 0) {
+    if (!Main.phase.ableToSelecting || Main.me.player.state.has("dead") || Main.selectedPlayers.length == 0) {
         Table.okElement.classList.add("invisible");
     } else {
         if (Main.phase.name == "discussion") {
@@ -65,7 +79,7 @@ Table.redrawTable = function() {
         } else if (Main.phase.name = "night") {
             if (Main.me.role == "Mafia") Table.okSpanElement.innerHTML = "Shoot";
             if (Main.me.role == "Maniac") Table.okSpanElement.innerHTML = "Kill";
-            if (Main.me.role == "Sheriff") Table.okSpshowMyRoleElementanElement.innerHTML = "Check";
+            if (Main.me.role == "Sheriff") Table.okSpanElement.innerHTML = "Check";
             if (Main.me.role == "Doctor") Table.okSpanElement.innerHTML = "Heal";
         }
         Table.okElement.classList.remove("invisible");
