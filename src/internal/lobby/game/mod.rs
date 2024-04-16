@@ -1,26 +1,28 @@
-use std::{collections::HashSet, fs::File, io::Read, sync::Arc, vec};
+pub mod character;
+pub mod role;
+pub mod messages;
 
-use tokio::{
-    task::JoinHandle,
-    sync::Mutex,
-    time,
+use std::{
+    collections::HashSet,
+    fs::File,
+    io::Read,
+    sync::Arc,
+    vec
 };
 
-use serde::Deserialize;
+use {
+    tokio::{
+        task::JoinHandle,
+        sync::Mutex,
+        time,
+    },
+    serde::Deserialize,
+};
 
-use role::{Role, RoleSet};
-
-pub mod game_loop;
-pub mod character;
-mod external;
-pub mod role;
-
-use character::{Character, Num};
-use game_loop::Candidate;
-
-use self::external::TimeInfo;
-
-use super::player::Player;
+use {
+    role::{Role, RoleSet},
+    character::{Character, Num},
+};
 
 #[derive(Deserialize)]
 struct TimeDelays {
@@ -77,42 +79,29 @@ impl MafiaTarget {
 
 
 
+#[derive(Clone, Copy)]
+pub struct Candidate {
+    pub num: Num,
+    pub cnt_votes: usize,
+}
+
+impl Candidate {
+    pub fn new(num: Num) -> Self {
+        Self {
+            num,
+            cnt_votes: 0,
+        }
+    }
+}
+
+
 pub struct Game {
     characters: Vec<Arc<Character>>,
     time_rules: TimeDelays,
     round: Mutex<usize>,
 }
 
-impl Game {
-    async fn send_who_put_it_on(characters: &Vec<Arc<Character>>, num: Num) {
-        for character in characters {
-            let _ = character.get_player().ws_sender.send(format!("{{\"WhomVoted\":{}}}", serde_json::to_string(&num).unwrap())).await;
-        }
-    }
-
-    async fn send_action(characters: &Vec<Arc<Character>>, action: external::ActionInfo) {
-        for character in characters {
-            let _ = character.get_player().ws_sender.send(format!("{{\"Action\":{}}}", serde_json::to_string(&action).unwrap())).await;
-        }
-    }
-
-        async fn send_time(&self, time: external::TimeInfo, nums: Option<Vec<Num>>) {
-            for character in &self.characters {
-                if let TimeInfo::Voting = time {
-                    let nums = nums.clone().unwrap();
-                    let _ = character.get_player().ws_sender.send(format!("{{\"NextPhase\":{},\n\"Votes\":{}}}", serde_json::to_string(&time).unwrap(), serde_json::to_string(&nums).unwrap())).await;
-                } else {
-                    let _ = character.get_player().ws_sender.send(format!("{{\"NextPhase\":{}}}", serde_json::to_string(&time).unwrap())).await;
-                }
-            }
-    }
-
-    async fn send_who_tell(characters: &Vec<Arc<Character>>, num: Num) {
-        for character in characters {
-            let _ = character.get_player().ws_sender.send(format!("{{\"WhoTell\":{}}}", serde_json::to_string(&num).unwrap())).await;
-        }
-    }
-
+impl Game {   
     pub fn new(characters: Vec<Arc<Character>>) -> Self {
         let mut time_rules = String::new();
         File::open("./rules/times.json").unwrap().read_to_string(&mut time_rules).unwrap();
@@ -148,7 +137,7 @@ impl Game {
             println!("{}", cnt_characters);
             player.ws_sender.send(serde_json::to_string({
                 let info = &character.info.lock().await; println!("READY");
-                &external::StartInfo {
+                &messages::StartInfo {
                     num: info.num,
                     cnt_characters: cnt_characters,
                     role: info.role,
@@ -167,19 +156,19 @@ impl Game {
             println!(" --- round: {} ---", self.round.lock().await);        
 
             *self.round.lock().await += 1;
-            self.send_time(external::TimeInfo::Discussion, None).await;
+            messages::send_time(&self.characters, messages::TimeInfo::Discussion, None).await;
             let candidates: Vec<Num> = self.discussion().await;
 
-            self.send_time(external::TimeInfo::Voting, Some(candidates.clone())).await;
+            messages::send_time(&self.characters, messages::TimeInfo::Voting, Some(candidates.clone())).await;
             let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
             
-            self.send_time(external::TimeInfo::Sunset, None).await;
+            messages::send_time(&self.characters, messages::TimeInfo::Sunset, None).await;
             self.sunset(dies).await;
 
-            self.send_time(external::TimeInfo::Night, None).await;
+            messages::send_time(&self.characters, messages::TimeInfo::Night, None).await;
             let dies = self.night().await;
 
-            self.send_time(external::TimeInfo::Sunrise, None).await;
+            messages::send_time(&self.characters, messages::TimeInfo::Sunrise, None).await;
             self.sunrise(dies).await;
 
             if self.check_end().await {
@@ -200,7 +189,7 @@ impl Game {
             let num = Num::from_idx((i + *self.round.lock().await - 1) % self.characters.len());
             if !self.get_character(num).info.lock().await.alive {continue}
             
-            Game::send_who_tell(&self.characters, num).await;
+            messages::send_who_tell(&self.characters, num).await;
             println!("  player number {} saying:", num.to_idx() + 1);
 
             let character: Arc<Character> = self.get_character(num);
@@ -216,7 +205,7 @@ impl Game {
                             continue 'recv;
                         }
                     }
-                    Game::send_action(&characters, external::ActionInfo::Accuse { num }).await;
+                    messages::send_action(&characters, messages::ActionInfo::Accuse { num }).await;
                     candidates.lock().await.push(num);
                 }
             });
@@ -241,7 +230,7 @@ impl Game {
         for candidate in &mut candidates {
             let mut listners = vec![];
             let mut cnt = 0usize;
-            Game::send_who_put_it_on(&self.characters, candidate.num).await;
+            messages::send_who_put_it_on(&self.characters, candidate.num).await;
             for character in &self.characters {
                 let num = character.info.lock().await.num;
                 if voted.contains(&num) {
@@ -252,7 +241,7 @@ impl Game {
                 let characters = self.characters.clone();
                 listners.push(tokio::spawn(async move {
                     if player.recv_vote().await {
-                        Game::send_action(&characters, external::ActionInfo::Vote { num }).await;
+                        messages::send_action(&characters, messages::ActionInfo::Vote { num }).await;
                         Some(num)
                     } else {
                         None
@@ -295,12 +284,12 @@ impl Game {
     }
 
     async fn sunrise(&self, dies: Vec<Num>) {
-        println!("<sunrise>");        
+        println!("<sunrise>");
         self.dying(&dies).await;
     }
 
     async fn night(&self) -> Vec<Num>{
-        println!("<night>");        
+        println!("<night>");
         
         let mut mafia_listners = Vec::<JoinHandle<Num>>::new();
         let mut sheriff_listner = None;
@@ -360,7 +349,7 @@ impl Game {
     async fn dying(&self, dies: &Vec<Num>) {
         let characters = self.characters.clone();
         for die in dies {
-            Game::send_action(&characters, external::ActionInfo::Die { num: *die }).await;
+            messages::send_action(&characters, messages::ActionInfo::Die { num: *die }).await;
             self.get_character(*die).die().await;
         }
         for _ in dies {

@@ -7,16 +7,14 @@ use tokio::sync::{mpsc::{self, Sender}, Mutex};
 use futures::{SinkExt, StreamExt};
 
 use crate::{
-    lobby::{
-        game::Game, player::Player, State
-    },
-    AppState,
+    internal::lobby::{player::Player, State},
+    App,
     PlayerInfo,
 };
 
 const BUF: usize = 1000;
 
-pub async fn player(mut ws: WebSocket, state: AppState) {
+pub async fn player(mut ws: WebSocket, state: App) {
     let lobby = state.lobby;
 
     let (req_tx, req_rx) = mpsc::channel::<String>(BUF);

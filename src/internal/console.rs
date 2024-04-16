@@ -7,15 +7,13 @@ use tokio::{
     }
 };
 
-use crate::{
-    Lobby, State,
-    lobby::game::character::Num,
-};
 
-pub struct Listner {
+use super::lobby::{game::character::Num, Lobby, State};
+
+pub struct Console {
     lobby: Arc<Lobby>
 }
-impl Listner {
+impl Console {
     pub fn new(lobby: Arc<Lobby>) -> Self {
         Self {lobby}
     }
@@ -32,17 +30,17 @@ impl Listner {
             reader.read_line(&mut command).await.expect("Can't read command");
             let words: Vec<&str> = command.trim().split(' ').into_iter().collect();
             match words[0] {
-                "start" => {
+                "s" => {
                     println!("-- on --");
                     game_loop = Some(tokio::spawn(lobby.start().await.unwrap()));
                 },
-                "character" => {
+                "ch/r" => {
                     let num: usize = words[1].parse::<usize>().unwrap() - 1;
                     if let State::On{game} = &*self.lobby.state.lock().await {
                         dbg!(game.get_character(Num::from_idx(num)).info.lock().await.role);
                     }
                 },
-                "abort" => {
+                "q" => {
                     if let Some(game_loop) = &game_loop {
                         game_loop.abort();
                     }

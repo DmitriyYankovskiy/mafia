@@ -5,9 +5,9 @@ use axum::{
 
 use serde_json::json;
 
-use crate::{AppState, websockets};
+use crate::{App, server::websockets};
 
-pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn index(State(state): State<App>) -> impl IntoResponse {
     let tera = state.tera;
 
     let mut context = tera::Context::from_value(json!({
@@ -17,6 +17,6 @@ pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
     Html::from(tera.render("layouts/main.html", &context).unwrap())
 }
 
-pub async fn ws(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
+pub async fn ws(ws: WebSocketUpgrade, State(state): State<App>) -> impl IntoResponse {
     ws.on_upgrade(move|ws| {websockets::player(ws, state)})
 }

@@ -1,10 +1,7 @@
 use std::sync::{Arc, Weak};
 use tokio::sync::{mpsc::{Receiver, Sender}, Mutex};
 
-use super::{
-    Game,
-    game::character::{Character, Num},
-};
+use super::game::{character::{Character, Num}, Game};
 
 pub mod message {
     use serde::{Serialize, Deserialize};
@@ -55,9 +52,7 @@ impl Player {
     }
 
     pub async fn listen(me: Arc<Self>) {
-        println!("WOW");
         while let Some(msg) = me.ws_receiver.lock().await.recv().await {
-            println!("OMG: i read: {msg}");
 
             let msg = serde_json::from_str::<Message>(&msg).unwrap();
             me.action_sender.send(msg).await.unwrap();
