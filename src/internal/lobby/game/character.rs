@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 use super::{
     Game,
     role::Role,
+    message::{incom, outgo},
     super::player::Player,
 };
 
@@ -57,5 +58,10 @@ impl Character {
 
     pub async fn die(&self) {
         self.info.lock().await.alive = false;
+    }
+
+
+    pub async fn send(&self, m: outgo::M) {
+        self.player.send(super::super::outgo::M::Game(m));
     }
 }

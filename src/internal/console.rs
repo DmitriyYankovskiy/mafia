@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use tokio::{
     task::JoinHandle,
     io::{
@@ -32,7 +32,7 @@ impl Console {
             match words[0] {
                 "s" => {
                     println!("-- on --");
-                    game_loop = Some(tokio::spawn(lobby.start().await.unwrap()));
+                    game_loop = Some(tokio::spawn(lobby.start(Arc::downgrade(&lobby)).await.unwrap()));
                 },
                 "ch/r" => {
                     let num: usize = words[1].parse::<usize>().unwrap() - 1;

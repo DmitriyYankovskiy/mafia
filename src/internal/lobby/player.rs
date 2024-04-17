@@ -1,20 +1,10 @@
 use std::sync::{Arc, Weak};
 use tokio::sync::{mpsc::{Receiver, Sender}, Mutex};
 
-use super::game::{character::{Character, Num}, Game};
-
-pub mod message {
-    use serde::{Serialize, Deserialize};
-    use super::super::game::character::Num;
-    
-    #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-    pub enum Message {
-        Action {target: Num},
-        Vote,
-        Accuse {target: Num},
-    }
-}
-use message::Message;
+use super::{
+    game::{character::{Character, Num}, Game, self},
+    message::{incom, outgo},
+};
 
 #[derive(Debug, Clone)]
 pub struct PlayerInfo {
@@ -24,15 +14,15 @@ pub struct PlayerInfo {
 #[derive(Debug)]
 pub struct Player {
     pub info: Mutex<PlayerInfo>,
-    pub ws_sender: Sender<String>,
-    pub ws_receiver: Mutex<Receiver<String>>,
-    pub action_receiver: Mutex<Receiver<Message>>,
-    pub action_sender: Sender<Message>,
+    ws_sender: Sender<outgo::M>,
+    pub ws_receiver: Mutex<Receiver<incom::M>>,
+    pub action_receiver: Mutex<Receiver<game::message::incom::M>>,
+    action_sender: Sender<game::message::incom::M>,
     pub character: Mutex<Weak<Character>>,
 }
 
 impl Player {
-    pub fn new(name: String, ws_sender: Sender<String>, ws_receiver: Mutex<Receiver<String>>) -> Self {
+    pub fn new(name: String, ws_sender: Sender<outgo::M>, ws_receiver: Mutex<Receiver<incom::M>>) -> Self {
         let (sender, receiver) = tokio::sync::mpsc::channel(100);
         Player { 
             info: Mutex::new(PlayerInfo{name}),
@@ -53,9 +43,9 @@ impl Player {
 
     pub async fn listen(me: Arc<Self>) {
         while let Some(msg) = me.ws_receiver.lock().await.recv().await {
-
-            let msg = serde_json::from_str::<Message>(&msg).unwrap();
-            me.action_sender.send(msg).await.unwrap();
+            if let incom::M::Game(msg) = msg {
+                me.action_sender.send(msg).await.unwrap();
+            }
         }
     }
 
@@ -63,7 +53,7 @@ impl Player {
         loop { 
             let msg = self.action_receiver.lock().await.recv().await.unwrap(); 
             match msg {
-                Message::Accuse {target} => {return target}
+                game::message::incom::M::Accuse {target} => return target,
                 _ => {continue}
             }
         }
@@ -72,8 +62,9 @@ impl Player {
     pub async fn recv_vote(&self) -> bool {
         loop {
             let msg = self.action_receiver.lock().await.recv().await.unwrap();
-            if let Message::Vote = msg {
-                return true;
+            match msg {
+                game::message::incom::M::Vote => return true,
+                _ => continue,
             }
         }
     }
@@ -81,9 +72,14 @@ impl Player {
     pub async fn recv_action(&self) -> Num {
         loop {
             let msg = self.action_receiver.lock().await.recv().await.unwrap();
-            if let Message::Action { target } = msg {
-                return target;
+            match msg {
+                game::message::incom::M::Action {target} => return target,
+                _ => {continue}
             }
         }
+    }
+
+    pub async fn send(&self, m: outgo::M) {
+        self.ws_sender.send(m).await.unwrap();
     }
 }

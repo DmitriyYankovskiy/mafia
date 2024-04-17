@@ -1,5 +1,6 @@
 pub mod game;
 pub mod player;
+pub mod message;
 
 use std::{
     collections::HashMap, future::Future, sync::{Arc, Weak}
@@ -7,6 +8,8 @@ use std::{
 use tokio::sync::Mutex;
 use rand::seq::SliceRandom;
 use rand_pcg::Pcg32;
+
+use self::message::outgo;
 
 use {
     game::{
@@ -41,7 +44,7 @@ impl Lobby {
         }
     }
     
-    pub async fn start(&self) -> Result<impl Future<Output = ()>, &'static str> {
+    pub async fn start(&self, weak_self: Weak<Self>) -> Result<impl Future<Output = ()>, &'static str> {
         let state = {
             self.state.lock().await.clone()
         };
@@ -64,7 +67,7 @@ impl Lobby {
                 *players_vec[i].character.lock().await = Arc::downgrade(&characters[i]);
             }
 
-            let game = Arc::new(Game::new(characters));
+            let game = Arc::new(Game::new(characters, weak_self));
 
             for i in 0..(players_vec.len()) {
                 game.get_character(Num::from_idx(i)).set_game(Arc::downgrade(&Arc::clone(&game))).await;
@@ -74,6 +77,12 @@ impl Lobby {
             Ok(Game::run(game))
         } else {
             Err("you are trying to start the game but it has already started")
+        }
+    }
+
+    pub async fn send_all(&self, m: outgo::M) {
+        for (_, player) in self.players.lock().await.iter() {
+            player.send(m.clone()).await;
         }
     }
 

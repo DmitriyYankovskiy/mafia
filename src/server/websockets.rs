@@ -7,7 +7,7 @@ use tokio::sync::{mpsc::{self, Sender}, Mutex};
 use futures::{SinkExt, StreamExt};
 
 use crate::{
-    internal::lobby::{player::Player, State},
+    internal::lobby::{player::Player, State, message::*},
     App,
     PlayerInfo,
 };
@@ -17,8 +17,8 @@ const BUF: usize = 1000;
 pub async fn player(mut ws: WebSocket, state: App) {
     let lobby = state.lobby;
 
-    let (req_tx, req_rx) = mpsc::channel::<String>(BUF);
-    let (res_tx, mut res_rx) = mpsc::channel::<String>(BUF);
+    let (req_tx, req_rx) = mpsc::channel::<incom::M>(BUF);
+    let (res_tx, mut res_rx) = mpsc::channel::<outgo::M>(BUF);
 
     let req_rx = Mutex::new(req_rx);
 
@@ -39,7 +39,7 @@ pub async fn player(mut ws: WebSocket, state: App) {
 
     let _ = tokio::spawn(async move {        
         while let Some(msg) = res_rx.recv().await {
-            ws_req.send(Message::Text(msg)).await.unwrap();
+            ws_req.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.unwrap();
         }
     });
 
@@ -47,7 +47,7 @@ pub async fn player(mut ws: WebSocket, state: App) {
         while let Some(result_msg) = ws_res.next().await {
             if let Ok(msg) = result_msg {
                 if let Ok(msg_str) = msg.to_text() {
-                    req_tx.send(msg_str.to_string()).await.unwrap();
+                    req_tx.send(serde_json::from_str(&msg_str).unwrap()).await.unwrap();
                 }
             };
         }
