@@ -62,6 +62,6 @@ impl Character {
 
 
     pub async fn send(&self, m: outgo::M) {
-        self.player.send(super::super::outgo::M::Game(m));
+        self.player.send(super::super::outgo::M::Game(m)).await;
     }
 }
