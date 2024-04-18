@@ -105,7 +105,7 @@ pub struct Game {
 
 impl Game {
     pub async fn send_all(&self, m: message::outgo::M) {
-        self.lobby.upgrade().unwrap().send_all(super::outgo::M::Game(m));
+        self.lobby.upgrade().unwrap().send_all(super::outgo::M::Game(m)).await;
     }
 
     pub fn new(characters: Vec<Arc<Character>>, lobby: Weak<Lobby>) -> Self {
@@ -140,10 +140,14 @@ impl Game {
         for character in &me.characters {
             let character = character.clone();
             let cnt_characters = me.characters.len();
+            let (num, role) = {
+                let info = character.info.lock().await;
+                (info.num, info.role)
+            };
             character.send(outgo::M::Start {
-                num: character.info.lock().await.num,
+                num,
                 cnt_characters,
-                role: character.info.lock().await.role 
+                role,
             }).await;
         }
 
@@ -156,19 +160,19 @@ impl Game {
             println!(" --- round: {} ---", self.round.lock().await);        
 
             *self.round.lock().await += 1;
-            self.send_all(outgo::M::Time(outgo::TimeInfo::Discussion));
+            self.send_all(outgo::M::Time(outgo::TimeInfo::Discussion)).await;
             let candidates: Vec<Num> = self.discussion().await;
 
-            self.send_all(outgo::M::Time(outgo::TimeInfo::Voting { candidates: candidates.clone() }));
+            self.send_all(outgo::M::Time(outgo::TimeInfo::Voting { candidates: candidates.clone() })).await;
             let dies = self.voting(candidates.into_iter().map(Candidate::new).collect()).await;
             
-            self.send_all(outgo::M::Time(outgo::TimeInfo::Sunset));
+            self.send_all(outgo::M::Time(outgo::TimeInfo::Sunset)).await;
             self.sunset(dies).await;
 
-            self.send_all(outgo::M::Time(outgo::TimeInfo::Night {time: self.time_rules.night}));
+            self.send_all(outgo::M::Time(outgo::TimeInfo::Night {time: self.time_rules.night})).await;
             let dies = self.night().await;
 
-            self.send_all(outgo::M::Time(outgo::TimeInfo::Sunrise));
+            self.send_all(outgo::M::Time(outgo::TimeInfo::Sunrise)).await;
             self.sunrise(dies).await;
 
             if self.check_end().await {
