@@ -35,16 +35,16 @@ pub async fn player(mut ws: WebSocket, state: App) {
         }
     }
 
-    let (mut ws_req, mut ws_res) = ws.split();
+    let (mut ws_res, mut ws_req) = ws.split();
 
     let _ = tokio::spawn(async move {        
         while let Some(msg) = res_rx.recv().await {
-            ws_req.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.unwrap();
+            ws_res.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.unwrap();
         }
     });
 
     let _ = tokio::spawn(async move {
-        while let Some(result_msg) = ws_res.next().await {
+        while let Some(result_msg) = ws_req.next().await {
             if let Ok(msg) = result_msg {
                 if let Ok(msg_str) = msg.to_text() {
                     req_tx.send(serde_json::from_str(&msg_str).unwrap()).await.unwrap();
