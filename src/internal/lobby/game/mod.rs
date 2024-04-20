@@ -6,8 +6,6 @@ use std::{
     collections::HashSet, fs::File, io::Read, sync::{Arc, Weak}, vec
 };
 
-use crate::internal::lobby::game;
-
 use super::Lobby;
 
 use {
@@ -201,7 +199,6 @@ impl Game {
             let player = character.get_player();
             
             let candidates = Arc::clone(&candidates);
-            let characters = self.characters.clone();
             let game = self.clone();
             let listner = tokio::spawn(async move {
                 'recv: loop {
@@ -244,7 +241,6 @@ impl Game {
                 }
                 let player = character.get_player();
 
-                let characters = self.characters.clone();
                 let game = self.clone();
                 listners.push(tokio::spawn(async move {
                     if player.recv_vote().await {
@@ -301,10 +297,11 @@ impl Game {
         let mut mafia_listners = Vec::<JoinHandle<Num>>::new();
         let mut sheriff_listner = None;
         let mut mafia_target = MafiaTarget::new();
-        let mut sheriff_check  = Option::<Num>::None;
-        
+       
+
         for character in &self.characters {
-            let player = character.get_player();
+            let character = Arc::clone(character);
+            let player = character.get_player();            
             match {player.get_character().await.info.lock().await.role} {
                 Role::Mafia => {
                     mafia_listners.push(tokio::spawn(async move {
@@ -313,33 +310,27 @@ impl Game {
                     }));
                 },
                 Role::Sheriff => {
+                    let game = self.clone();
                     sheriff_listner = Some(tokio::spawn(async move {
                         let num = player.recv_action().await;
-                        num
+                        character.send(outgo::M::Check {
+                            num: num,
+                            res: game.get_character(num).info.lock().await.role.is_black()
+                        }).await;
                     }));
                 },
                 _ => continue,
             }       
         }
         time::sleep(self.time_rules.night()).await;
+        
         for mafia_listner in &mafia_listners {
             mafia_listner.abort();
         }
-        if let Some(listner) = &mut sheriff_listner {
+        if let Some(listner) = sheriff_listner {
             listner.abort();
-            if let Ok(res) = listner.await {
-                sheriff_check = Some(res);
-            }            
+            let _ = listner.await;
         }
-
-        if let Some(num) = sheriff_check {
-            for character in &self.characters {
-                if character.info.lock().await.role == Role::Sheriff {
-                    self.get_character(num).info.lock().await.role.is_black();
-                }
-            }
-        }
-
 
         for listner in mafia_listners {
             if let Ok(target) = listner.await {
@@ -354,9 +345,8 @@ impl Game {
     }
 
     async fn dying(&self, dies: &Vec<Num>) {
-        let characters = self.characters.clone();
         for die in dies {
-            self.send_all(outgo::M::Die { num: *die, time: self.time_rules.last_words });
+            self.send_all(outgo::M::Die { num: *die, time: self.time_rules.last_words }).await;
             self.get_character(*die).die().await;
         }
         for _ in dies {

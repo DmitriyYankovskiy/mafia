@@ -32,6 +32,7 @@ pub mod outgo {
         Time(TimeInfo),
         Die {num: Num, time: u64},
         Vote {from: Num},
+        Check {num: Num, res: bool},
         Accuse {num: Num},
         Next {num: Num},
     }
