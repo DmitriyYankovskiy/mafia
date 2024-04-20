@@ -6,6 +6,8 @@ use std::{
     collections::HashSet, fs::File, io::Read, sync::{Arc, Weak}, vec
 };
 
+use crate::internal::lobby::player;
+
 use super::Lobby;
 
 use {
@@ -296,21 +298,36 @@ impl Game {
         
         let mut mafia_listners = Vec::<JoinHandle<Num>>::new();
         let mut sheriff_listner = None;
+        let mut don_listner = None;
         let mut mafia_target = MafiaTarget::new();
        
 
         for character in &self.characters {
             let character = Arc::clone(character);
-            let player = character.get_player();            
-            match {player.get_character().await.info.lock().await.role} {
-                Role::Mafia => {
+            let player = character.get_player();
+            let game = self.clone();
+            match {character.clone().info.lock().await.role} {
+                Role::Mafia | Role::Don => {
+                    let player_clone = player.clone(); 
                     mafia_listners.push(tokio::spawn(async move {
-                        let num = player.recv_action().await;
+                        let num = player_clone.recv_action().await;
                         num
                     }));
+                    if character.info.lock().await.role == Role::Don {
+                        println!("don check");
+
+                        don_listner = Some(tokio::spawn(async move {
+                            let num = player.recv_action().await;
+                            character.send(outgo::M::Check {
+                                num: num,
+                                res: game.get_character(num).info.lock().await.role == Role::Sheriff,
+                            }).await;
+                        }));
+                    }
                 },
                 Role::Sheriff => {
-                    let game = self.clone();
+                    println!("sheriff check");
+
                     sheriff_listner = Some(tokio::spawn(async move {
                         let num = player.recv_action().await;
                         character.send(outgo::M::Check {
@@ -327,8 +344,14 @@ impl Game {
         for mafia_listner in &mafia_listners {
             mafia_listner.abort();
         }
-        if let Some(listner) = sheriff_listner {
+        if let Some(listner) = &sheriff_listner {
             listner.abort();
+        }
+        if let Some(listner) = don_listner {
+            listner.abort();
+            let _ = listner.await;
+        }
+        if let Some(listner) = sheriff_listner {
             let _ = listner.await;
         }
 
