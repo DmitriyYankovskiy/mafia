@@ -73,7 +73,9 @@ impl Player {
         loop {
             let msg = self.action_receiver.lock().await.recv().await.unwrap();
             match msg {
-                game::message::incom::M::Action {target} => return target,
+                game::message::incom::M::Action {target} => {
+                    println!("i read action");
+                    return target},
                 _ => {continue}
             }
         }
