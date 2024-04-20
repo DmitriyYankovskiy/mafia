@@ -5,6 +5,7 @@ let tableElement = document.getElementById("round-table");
 
 function Player(number) {
     this.number = number;
+    this.knowedRole = 0;
     this.state = new Set();
     this.state.add("alive");
     this.element = document.getElementById(`player-${number}`);
@@ -111,6 +112,10 @@ Main.gameEvents.nextDiscussioner = function (say) {
 };
 
 Main.gameEvents.startVoting = function (targets) {
+    for (let i in Main.players) {
+        Main.players[i].state.delete("saying");
+    }
+
     Main.dayOrNight = "day";
     Main.phase = {
         name: "voting",
@@ -171,6 +176,11 @@ Main.gameEvents.killPlayer = function (player) {
 
 Main.gameEvents.addAccusion = function(player) {
     player.type = "target";
+    Table.redrawTable();
+}
+
+Main.gameEvents.addKnowedRole = function(player, result) {
+    player.knowedRole = (result ? 2 : 1);
     Table.redrawTable();
 }
 

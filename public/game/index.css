@@ -92,6 +92,7 @@
 .player-number {
     user-select: none;
     font-size: 4em;
+    text-shadow: inherit;
 }
 
 .saying-player {
@@ -104,7 +105,7 @@
 
 .me-player {
     border-radius: 25%;
-    background-color: #D9D9D9;
+    background-color: #e9bc85;
     /* box-shadow: 0px 0px 35px #00000025; */
 }
 
@@ -148,15 +149,23 @@
     transition: 0.2s;
 }
 
-.ok-button:hover {
+.ok-button-clickable:hover {
     width: 300px;
     height: 300px;
     border-radius: 150px;
 }
-.ok-button:active {
+.ok-button-clickable:active {
     width: 250px;
     height: 250px;
     border-radius: 125px;
+}
+
+.goodrole-player {
+    text-shadow:  0px 0px 30px #b88700bb;
+}
+
+.badrole-player {
+    text-shadow:  0px 0px 30px #5f5f5fbb;
 }
 
 .ok-span {

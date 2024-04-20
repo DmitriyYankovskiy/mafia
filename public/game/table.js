@@ -57,6 +57,12 @@ Table.redrawTable = function() {
             } else {
                 players[i].element.classList.remove("saying-player");
             }
+            
+            if (players[i].cnowedRole == 1) {
+                players[i].element.classList.add("badrole-player");
+            } else if (players[i].cnowedRole == 2) {
+                players[i].element.classList.add("goodrole-player");
+            }
 
         } else {
             players[i].element.style.display = "none";
@@ -69,7 +75,7 @@ Table.redrawTable = function() {
         }
     }
 
-    if (!Main.phase.ableToSelecting || Main.me.player.state.has("dead") || Main.selectedPlayers.length == 0) {
+    if (!Main.phase.ableToSelecting || Main.me.player.state.has("dead")) {
         Table.okElement.classList.add("invisible");
     } else {
         if (Main.phase.name == "discussion") {
@@ -81,6 +87,11 @@ Table.redrawTable = function() {
             if (Main.me.role == "Maniac") Table.okSpanElement.innerHTML = "Kill";
             if (Main.me.role == "Sheriff") Table.okSpanElement.innerHTML = "Check";
             if (Main.me.role == "Doctor") Table.okSpanElement.innerHTML = "Heal";
+        }
+        if (Main.selectedPlayers.length) {
+            Table.okElement.classList.add("ok-button-clickable");
+        } else {
+            Table.okElement.classList.remove("ok-button-clickable");
         }
         Table.okElement.classList.remove("invisible");
     }
