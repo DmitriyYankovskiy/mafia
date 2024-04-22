@@ -87,7 +87,7 @@ impl Lobby {
     }
 
     pub async fn add_player(&self, player: Arc<Player>) -> Result<usize, &str> {
-        println!("  new character with name: {}", &player.info.lock().await.name);
+        println!("+ new character with name: {}", &player.info.lock().await.name);
         let name = {player.info.lock().await.name.clone()};
         self.players.lock().await.insert(name, player);
         Ok(self.players.lock().await.len())

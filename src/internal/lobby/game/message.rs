@@ -1,7 +1,5 @@
-use std::sync::Arc;
-
 use super::{
-    character::{Num, Character},
+    character::Num,
     role::Role,
 };
 

@@ -7,7 +7,7 @@ use tera::Tera;
 use serde::{Serialize, Deserialize};
 
 use internal::{
-    lobby::{Lobby, State},
+    lobby::Lobby,
     console::Console,
 };
 

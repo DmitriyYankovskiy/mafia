@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 use super::{
     Game,
     role::Role,
-    message::{incom, outgo},
+    message::outgo,
     super::player::Player,
 };
 

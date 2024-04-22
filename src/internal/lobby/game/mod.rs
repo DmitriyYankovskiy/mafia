@@ -6,8 +6,6 @@ use std::{
     collections::HashSet, fs::File, io::Read, sync::{Arc, Weak}, vec
 };
 
-use crate::internal::lobby::player;
-
 use super::Lobby;
 
 use {
@@ -195,7 +193,7 @@ impl Game {
             
             self.send_all(outgo::M::Next { num }).await;
 
-            println!("  player number {} saying:", num.to_idx() + 1);
+            println!(": player number {} saying:", num.to_idx() + 1);
 
             let character: Arc<Character> = self.get_character(num);
             let player = character.get_player();
@@ -306,16 +304,16 @@ impl Game {
             let character = Arc::clone(character);
             let player = character.get_player();
             let game = self.clone();
-            match {character.clone().info.lock().await.role} {
+            let role = Arc::clone(&character).info.lock().await.role;
+            match role {
                 Role::Mafia | Role::Don => {
                     let player_clone = player.clone(); 
-                    mafia_listners.push(tokio::spawn(async move {
+                    let lisner = tokio::spawn(async move {
                         let num = player_clone.recv_action().await;
                         num
-                    }));
-                    if character.info.lock().await.role == Role::Don {
-                        println!("don check");
-
+                    });
+                    mafia_listners.push(lisner);
+                    if role == Role::Don {
                         don_listner = Some(tokio::spawn(async move {
                             let num = player.recv_action().await;
                             character.send(outgo::M::Check {
@@ -326,8 +324,6 @@ impl Game {
                     }
                 },
                 Role::Sheriff => {
-                    println!("sheriff check");
-
                     sheriff_listner = Some(tokio::spawn(async move {
                         let num = player.recv_action().await;
                         character.send(outgo::M::Check {
@@ -336,7 +332,7 @@ impl Game {
                         }).await;
                     }));
                 },
-                _ => continue,
+                _ => {},
             }       
         }
         time::sleep(self.time_rules.night()).await;

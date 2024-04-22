@@ -42,7 +42,7 @@ impl Player {
     }
 
     pub async fn listen(me: Arc<Self>) {
-        while let Some(msg) = me.ws_receiver.lock().await.recv().await {
+        while let Some(msg) = {me.ws_receiver.lock().await.recv().await} {
             if let incom::M::Game(msg) = msg {
                 me.action_sender.send(msg).await.unwrap();
             }
@@ -51,7 +51,7 @@ impl Player {
 
     pub async fn recv_accuse(&self) -> Num {
         loop { 
-            let msg = self.action_receiver.lock().await.recv().await.unwrap(); 
+            let msg = {self.action_receiver.lock().await.recv().await.unwrap()}; 
             match msg {
                 game::message::incom::M::Accuse {target} => return target,
                 _ => {continue}
@@ -61,7 +61,7 @@ impl Player {
 
     pub async fn recv_vote(&self) -> bool {
         loop {
-            let msg = self.action_receiver.lock().await.recv().await.unwrap();
+            let msg = {self.action_receiver.lock().await.recv().await.unwrap()};
             match msg {
                 game::message::incom::M::Vote => return true,
                 _ => continue,
@@ -71,10 +71,9 @@ impl Player {
 
     pub async fn recv_action(&self) -> Num {
         loop {
-            let msg = self.action_receiver.lock().await.recv().await.unwrap();
+            let msg = {self.action_receiver.lock().await.recv().await.unwrap()};
             match msg {
                 game::message::incom::M::Action {target} => {
-                    println!("i read action");
                     return target},
                 _ => {continue}
             }
