@@ -31,7 +31,7 @@ impl Console {
             let words: Vec<&str> = command.trim().split(' ').into_iter().collect();
             match words[0] {
                 "s" => {
-                    println!("-- on --");
+                    println!("== on ==");
                     game_loop = Some(tokio::spawn(lobby.start(Arc::downgrade(&lobby)).await.unwrap()));
                 },
                 "ch/r" => {
@@ -41,6 +41,7 @@ impl Console {
                     }
                 },
                 "q" => {
+                    println!("== quit ==");
                     if let Some(game_loop) = &game_loop {
                         game_loop.abort();
                     }
